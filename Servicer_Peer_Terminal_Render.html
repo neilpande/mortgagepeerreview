@@ -1,0 +1,1306 @@
+<title>Servicer Peer Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f5; --surface-3:#e5eaf0;
+  --line:#dde3ea; --line-strong:#c4cfdb;
+  --ink:#0e1620; --ink-2:#48566a; --ink-3:#77879b;
+  --accent:#2a78d6; --accent-soft:#e7f0fc; --accent-ink:#1c5cab;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --good:#1baf7a; --good-bg:#e2f5ed;
+  --warn:#c98500; --warn-bg:#fbf0d8;
+  --crit:#d43635; --crit-bg:#fbe6e6;
+  --grid:#eaeef3;
+  --shadow:0 1px 2px rgba(14,22,32,.06), 0 8px 24px -16px rgba(14,22,32,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0b1016; --surface:#141b24; --surface-2:#1b242f; --surface-3:#222d3a;
+    --line:#26313e; --line-strong:#3a4757;
+    --ink:#eef3f8; --ink-2:#a3b2c4; --ink-3:#6f8095;
+    --accent:#3987e5; --accent-soft:#16283d; --accent-ink:#8dbcf2;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --good:#199e70; --good-bg:#0f2b22;
+    --warn:#c98500; --warn-bg:#2e2410;
+    --crit:#e66767; --crit-bg:#331a1a;
+    --grid:#1e2833;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0b1016; --surface:#141b24; --surface-2:#1b242f; --surface-3:#222d3a;
+  --line:#26313e; --line-strong:#3a4757;
+  --ink:#eef3f8; --ink-2:#a3b2c4; --ink-3:#6f8095;
+  --accent:#3987e5; --accent-soft:#16283d; --accent-ink:#8dbcf2;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --good:#199e70; --good-bg:#0f2b22;
+  --warn:#c98500; --warn-bg:#2e2410;
+  --crit:#e66767; --crit-bg:#331a1a;
+  --grid:#1e2833;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:"Archivo",system-ui,sans-serif; margin:0; text-wrap:balance; letter-spacing:-.01em}
+.mono,td.num,th.num,.tag{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+.topbar{
+  position:sticky; top:0; z-index:40; background:var(--surface);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:12px 24px;
+}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:auto}
+.brand .mark{font-family:"Archivo"; font-weight:700; font-size:17px; letter-spacing:-.02em}
+.brand .mark span{color:var(--accent)}
+.brand .sub{font-family:"IBM Plex Mono"; font-size:10.5px; text-transform:uppercase; letter-spacing:.13em; color:var(--ink-3)}
+.ctl{display:flex; align-items:center; gap:8px}
+.ctl label{font-size:10.5px; text-transform:uppercase; letter-spacing:.11em; color:var(--ink-3); font-family:"IBM Plex Mono"}
+select,.btn{
+  font:inherit; font-size:12.5px; font-family:"IBM Plex Mono";
+  background:var(--surface-2); color:var(--ink);
+  border:1px solid var(--line-strong); border-radius:5px; padding:5px 9px; cursor:pointer;
+}
+.btn:hover,select:hover{border-color:var(--accent)}
+.btn[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.mockbar{
+  background:var(--warn-bg); border-bottom:1px solid var(--line);
+  padding:7px 24px; font-size:12px; display:flex; gap:10px; align-items:baseline;
+}
+.mockbar strong{font-family:"IBM Plex Mono"; font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--warn); flex:none}
+
+.tabs{
+  position:sticky; top:57px; z-index:35; background:var(--bg);
+  border-bottom:1px solid var(--line); padding:0 24px; display:flex; gap:2px; overflow-x:auto;
+}
+.tab{
+  appearance:none; background:none; border:0; border-bottom:2px solid transparent;
+  color:var(--ink-2); font:inherit; font-size:13px; font-weight:500;
+  padding:11px 13px; cursor:pointer; white-space:nowrap; display:flex; gap:7px; align-items:baseline;
+}
+.tab i{font-style:normal; font-family:"IBM Plex Mono"; font-size:10px; color:var(--ink-3)}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent); font-weight:600}
+.tab[aria-selected="true"] i{color:var(--accent)}
+
+main{max-width:1460px; margin:0 auto; padding:0 24px 72px}
+.page[hidden]{display:none}
+
+/* ---------- page header ---------- */
+.subhead{display:flex;align-items:baseline;gap:12px;margin:8px 0 -6px;padding-top:14px;border-top:1px solid var(--line)}
+.subhead h2{font-size:16px;font-weight:600}
+.subhead .eyebrow{white-space:nowrap}
+.pagehead{
+  display:flex; gap:24px; align-items:flex-end; flex-wrap:wrap;
+  padding:26px 0 18px; border-bottom:2px solid var(--ink); margin-bottom:20px;
+}
+.pagehead .no{
+  font-family:"IBM Plex Mono"; font-size:11px; letter-spacing:.14em; color:var(--ink-3);
+  border:1px solid var(--line-strong); border-radius:4px; padding:3px 8px; align-self:flex-start;
+}
+.pagehead h1{font-size:26px; font-weight:700; letter-spacing:-.03em; line-height:1.15}
+.pagehead .lede{font-size:13.5px; color:var(--ink-2); max-width:70ch; margin-top:7px}
+.pagehead .meta{margin-left:auto; text-align:right; display:flex; flex-direction:column; gap:5px; align-items:flex-end}
+
+.stack{display:flex; flex-direction:column; gap:20px}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:9px; box-shadow:var(--shadow); overflow:hidden}
+.card > header{padding:13px 18px 11px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap}
+.card > header h2{font-size:14.5px; font-weight:600}
+.card > header .hint{font-size:12px; color:var(--ink-3); margin-top:3px; max-width:76ch}
+.card > header .spacer{margin-left:auto}
+.card .body{padding:18px}
+.card .body.flush{padding:0}
+
+.eyebrow{font-family:"IBM Plex Mono"; font-size:10px; text-transform:uppercase; letter-spacing:.14em; color:var(--ink-3)}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto}
+table{border-collapse:separate; border-spacing:0; width:100%; font-size:13px}
+thead th{
+  background:var(--surface-2);
+  font-family:"IBM Plex Mono"; font-weight:500; font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-2); text-align:right;
+  padding:9px 12px; border-bottom:1px solid var(--line-strong); white-space:nowrap; vertical-align:bottom;
+}
+thead th.lbl{text-align:left}
+thead tr.grp th{
+  font-size:10px; letter-spacing:.14em; color:var(--ink-3); text-align:center;
+  border-bottom:1px solid var(--line); background:var(--surface-3); padding:6px 12px;
+}
+tbody td{padding:9px 12px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap}
+tbody td.lbl{text-align:left}
+tbody tr:hover td{background:var(--surface-2)}
+tbody tr.total td{background:var(--surface-2); font-weight:600; border-top:1px solid var(--line-strong)}
+td.num,th.num{font-family:"IBM Plex Mono"; font-variant-numeric:tabular-nums}
+td.sep{border-left:1px solid var(--line)}
+th.sep{border-left:1px solid var(--line)}
+.co{display:flex; align-items:center; gap:9px}
+.co .tk{
+  font-family:"IBM Plex Mono"; font-size:10px; font-weight:600; letter-spacing:.04em;
+  background:var(--surface-3); color:var(--ink-2); border-radius:3px; padding:2px 5px;
+  min-width:44px; text-align:center;
+}
+.co .nm{font-weight:500}
+.co .nm em{font-style:normal; color:var(--ink-3); font-size:11.5px}
+
+.pv{position:relative; cursor:help; border-bottom:1px dotted var(--line-strong)}
+.pv::after{content:""; display:inline-block; width:5px; height:5px; border-radius:50%; margin-left:5px; vertical-align:2px; background:var(--good)}
+.pv[data-conf="derived"]::after{background:var(--s1)}
+.pv[data-conf="check"]::after{background:var(--warn)}
+.pv .card-tip{
+  display:none; position:absolute; right:0; top:calc(100% + 7px); z-index:60;
+  width:320px; text-align:left; white-space:normal;
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:7px;
+  box-shadow:0 12px 30px -10px rgba(0,0,0,.45); padding:11px 13px;
+}
+.pv:hover .card-tip,.pv:focus-within .card-tip{display:block}
+.card-tip .r{display:flex; gap:10px; font-size:11.5px; padding:2.5px 0}
+.card-tip .r b{font-family:"IBM Plex Mono"; font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:500; min-width:58px; flex:none}
+.card-tip .r span{font-family:"IBM Plex Mono"; font-size:11px; color:var(--ink); word-break:break-word}
+
+body[data-plumb="1"] .val{display:none}
+body:not([data-plumb="1"]) .tagval{display:none}
+.tagval{font-family:"IBM Plex Mono"; font-size:10px; color:var(--accent-ink); word-break:break-all; white-space:normal; display:inline-block; max-width:190px; text-align:right; line-height:1.35}
+
+.pill{display:inline-flex; align-items:center; gap:5px; border-radius:20px; padding:2px 8px; font-size:11px; font-family:"IBM Plex Mono"; font-weight:500; border:1px solid transparent}
+.pill.ok{background:var(--good-bg); color:var(--good); border-color:color-mix(in srgb,var(--good) 30%,transparent)}
+.pill.wn{background:var(--warn-bg); color:var(--warn); border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.pill.cr{background:var(--crit-bg); color:var(--crit); border-color:color-mix(in srgb,var(--crit) 30%,transparent)}
+.pill.nu{background:var(--surface-3); color:var(--ink-2); border-color:var(--line-strong)}
+.pill.ac{background:var(--accent-soft); color:var(--accent-ink); border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+
+.tag{font-size:11px; background:var(--surface-2); border:1px solid var(--line); border-radius:4px; padding:1.5px 5px; color:var(--ink-2); display:inline-block; margin:2px 4px 2px 0; word-break:break-all}
+.tag.primary{background:var(--accent-soft); color:var(--accent-ink); border-color:color-mix(in srgb,var(--accent) 28%,transparent)}
+.tag.der{background:transparent; border-style:dashed}
+
+/* tags-on-this-page strip */
+.tagstrip{background:var(--surface-2); border:1px dashed var(--line-strong); border-radius:9px; padding:14px 18px}
+.tagstrip h3{font-size:12px; font-family:"IBM Plex Mono"; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-3); font-weight:500; margin-bottom:9px}
+.tagstrip .row{display:flex; gap:14px; align-items:baseline; padding:4px 0; flex-wrap:wrap}
+.tagstrip .row b{font-family:"IBM Plex Mono"; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); font-weight:500; min-width:78px}
+
+/* charts */
+svg.chart{display:block; width:100%; max-width:760px; margin:0 auto; height:auto; overflow:visible}
+svg text{font-family:"IBM Plex Mono"; font-variant-numeric:tabular-nums}
+.ax{fill:var(--ink-3); font-size:10px}
+.axl{fill:var(--ink-2); font-size:10.5px}
+.dl{fill:var(--ink); font-size:10.5px; font-weight:500}
+.gl{stroke:var(--grid); stroke-width:1}
+.zl{stroke:var(--line-strong); stroke-width:1}
+.refl{stroke:var(--ink-3); stroke-width:1; stroke-dasharray:4 3}
+.legend{display:flex; flex-wrap:wrap; gap:14px; padding:0 0 12px}
+.legend i{width:11px; height:11px; border-radius:3px; display:inline-block; margin-right:6px; vertical-align:-1px}
+.legend span{font-size:11.5px; color:var(--ink-2); font-family:"IBM Plex Mono"}
+g.hoverable:hover rect,g.hoverable:hover circle{opacity:.82}
+
+/* ---------- benchmark ---------- */
+.inputs{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:14px}
+.field{display:flex; flex-direction:column; gap:5px}
+.field label{font-family:"IBM Plex Mono"; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+.field .ip{display:flex; align-items:baseline; gap:6px; border:1px solid var(--line-strong); border-radius:6px; background:var(--surface-2); padding:7px 10px}
+.field .ip:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.field input{
+  font:inherit; font-family:"IBM Plex Mono"; font-variant-numeric:tabular-nums; font-size:15px; font-weight:500;
+  border:0; background:none; color:var(--ink); width:100%; min-width:0; padding:0; -moz-appearance:textfield;
+}
+.field input:focus{outline:none}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0}
+.field .u{font-family:"IBM Plex Mono"; font-size:11px; color:var(--ink-3); white-space:nowrap; flex:none}
+.privacy{display:flex; gap:10px; align-items:baseline; font-size:12px; color:var(--ink-3); margin-top:14px; padding-top:12px; border-top:1px dashed var(--line-strong); flex-wrap:wrap}
+.privacy b{font-family:"IBM Plex Mono"; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-2); flex:none}
+.privacy .spacer{margin-left:auto}
+
+/* ---------- commentary ---------- */
+.read{padding:20px 22px 6px}
+.read p{font-size:14px; line-height:1.68; color:var(--ink-2); max-width:70ch; margin:0 0 14px}
+.read p.lead{font-size:16.5px; line-height:1.6; color:var(--ink); max-width:64ch}
+.read .cols{column-count:2; column-gap:44px}
+@media (max-width:1080px){.read .cols{column-count:1}}
+.read .cols p{break-inside:avoid; max-width:none}
+.read .fig{font-family:"IBM Plex Mono"; font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600; white-space:nowrap}
+.read .fig.up{color:var(--good)} .read .fig.dn{color:var(--crit)}
+
+.findings{display:flex; flex-direction:column}
+.finding{display:grid; grid-template-columns:3px 1fr; gap:0 18px; border-bottom:1px solid var(--line)}
+.finding:last-child{border-bottom:0}
+.finding .stripe{background:var(--line-strong)}
+.finding.crit .stripe{background:var(--crit)}
+.finding.matl .stripe{background:var(--warn)}
+.finding.good .stripe{background:var(--good)}
+.finding.info .stripe{background:var(--s1)}
+.finding .c{padding:17px 22px 18px 0}
+@media (min-width:1080px){
+  .finding .c{display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,340px); gap:0 40px; align-items:start}
+  .finding .meta{grid-column:1 / -1}
+  .finding .check{margin-top:2px}
+}
+.finding .meta{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:7px}
+.finding h4{font-size:14.5px; font-weight:600; flex:1 1 auto; min-width:220px}
+.finding .money{font-family:"IBM Plex Mono"; font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+.finding .money.dn{color:var(--crit)} .finding .money.up{color:var(--good)}
+.finding p{font-size:13.5px; line-height:1.62; color:var(--ink-2); max-width:74ch; margin:0 0 9px}
+.finding .fig{font-family:"IBM Plex Mono"; font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600; white-space:nowrap}
+.finding .check{font-size:12.5px; line-height:1.55; color:var(--ink-3); border-left:2px solid var(--line-strong); padding-left:12px; max-width:70ch}
+.finding .check b{font-family:"IBM Plex Mono"; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-2); display:block; margin-bottom:2px}
+
+.arch{display:grid; grid-template-columns:auto 1fr; gap:0 20px; align-items:start; padding:20px 22px}
+.arch .who{text-align:center; border-right:1px solid var(--line); padding-right:20px}
+.arch .who .tkbig{font-family:"IBM Plex Mono"; font-size:20px; font-weight:600; letter-spacing:.03em; background:var(--surface-3); color:var(--ink); border-radius:5px; padding:7px 13px; display:inline-block}
+.arch .who .nm{font-size:12px; color:var(--ink-3); margin-top:8px; max-width:15ch; margin-inline:auto; line-height:1.35}
+.arch .body2 p{font-size:13.5px; line-height:1.62; color:var(--ink-2); max-width:72ch; margin:0 0 9px}
+.arch .body2 .fig{font-family:"IBM Plex Mono"; color:var(--ink); font-weight:600}
+.hero{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1px; background:var(--line)}
+.hero > div{background:var(--surface); padding:18px}
+.hero .k{font-family:"IBM Plex Mono"; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+.hero .v{font-family:"Archivo"; font-weight:700; font-size:30px; letter-spacing:-.03em; margin-top:7px; font-variant-numeric:tabular-nums; line-height:1.05}
+.hero .v.neg{color:var(--crit)} .hero .v.pos{color:var(--good)}
+.hero .d{font-size:12.5px; color:var(--ink-2); margin-top:6px; max-width:34ch}
+
+tbody tr.you td{background:var(--accent-soft); font-weight:600}
+tbody tr.you:hover td{background:var(--accent-soft)}
+tbody tr.you td.lbl .tk{background:var(--accent); color:#fff}
+
+.strip{display:flex; flex-direction:column; gap:0}
+.strip .row{display:grid; grid-template-columns:minmax(130px,168px) 1fr minmax(96px,auto); gap:16px; align-items:center; padding:11px 0; border-bottom:1px solid var(--line)}
+.strip .row:last-child{border-bottom:0}
+.strip .nmx{font-size:12.5px; color:var(--ink-2)}
+.strip .nmx b{display:block; color:var(--ink); font-weight:600; font-size:13px}
+.strip .verdict{text-align:right}
+.notes{font-size:13px; color:var(--ink-2); max-width:78ch}
+.notes p{margin:0 0 9px}
+.notes strong{color:var(--ink)}
+.cols2{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:24px}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(400px,1fr)); gap:20px}
+
+@media (max-width:760px){
+  main{padding:0 12px 60px}
+  .topbar,.tabs,.mockbar{padding-left:12px; padding-right:12px}
+  .tabs{position:static}
+  .pagehead h1{font-size:21px}
+}
+@media print{
+  .topbar,.tabs,.mockbar{display:none}
+  .page{display:block!important; break-after:page}
+  .page:last-child{break-after:auto}
+  .card{box-shadow:none; break-inside:avoid}
+  body{background:#fff}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">SERVICER<span>·</span>PEER</div>
+    <div class="sub">CloverStone · EDGAR XBRL Accelerator</div>
+  </div>
+  <div class="ctl">
+    <label for="per">Period</label>
+    <select id="per"><option>Q2 2026 · 10-Q</option><option>Q1 2026 · 10-Q</option><option>FY 2025 · 10-K</option></select>
+  </div>
+  <button class="btn" id="plumb" aria-pressed="false">Show XBRL plumbing</button>
+  <button class="btn" id="theme">Theme</button>
+</div>
+
+<div class="mockbar">
+  <strong>Render</strong>
+  <span>Figures are <b>illustrative placeholders</b> at realistic magnitudes — a design target, not scraped output. Every column on every page maps to a <b>standard us-gaap tag</b> or to arithmetic on standard tags. Nothing here needs an extension namespace or MD&amp;A text extraction.</span>
+</div>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true"  data-p="p1"><i>01</i>MSR &amp; Level 3</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p2"><i>02</i>Flows &amp; Economics</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p3"><i>03</i>Credit &amp; Balance Sheet</button>
+  <button class="tab" role="tab" aria-selected="false" data-p="p4"><i>04</i>Benchmark Yourself</button>
+</div>
+
+<main>
+  <section class="page stack" id="pg-p1"></section>
+  <section class="page stack" id="pg-p2" hidden></section>
+  <section class="page stack" id="pg-p3" hidden></section>
+  <section class="page stack" id="pg-p4" hidden></section>
+</main>
+<script>
+/* =========================================================
+   ILLUSTRATIVE PLACEHOLDER DATA — 7 peers, Q2 2026
+   $B unless marked; flows are YTD (6 months) in $M unless marked
+   ========================================================= */
+const CO = [
+ {tk:"RKT", nm:"Rocket Companies",             note:"incl. Mr. Cooper", cik:"0001805284", acc:"0001805284-26-000041",
+  upb:1640, msr:23.80, sl:142, lhfs:9.4,
+  cpr:7.8, yld:9.4, cts:68,
+  rfBeg:21548, rfOrig:2640, rfPur:980, rfDisp:-420, rfVal:572, rfCf:-1520,
+  cfPur:980, cfSale:395, cfLhfsOut:112.4, cfLhfsIn:110.8,
+  fee:2501, late:98, anc:172, gos:1439, iiLhfs:386,
+  dqUpb:31.16, assets:42.1, eq:14.9, cash:3.10, repo:12.6, ni:486},
+ {tk:"RITM",nm:"Rithm Capital",                note:"Newrez",           cik:"0001556593", acc:"0001556593-26-000032",
+  upb:610, msr:8.70, sl:96, lhfs:4.1,
+  cpr:7.2, yld:9.6, cts:74,
+  rfBeg:7758, rfOrig:640, rfPur:810, rfDisp:-190, rfVal:187, rfCf:-505,
+  cfPur:810, cfSale:175, cfLhfsOut:58.2, cfLhfsIn:57.1,
+  fee:952, late:49, anc:79, gos:646, iiLhfs:214,
+  dqUpb:14.64, assets:41.8, eq:7.6, cash:1.44, repo:14.2, ni:312},
+ {tk:"PFSI",nm:"PennyMac Financial Services",  note:"",                 cik:"0001745916", acc:"0001745916-26-000029",
+  upb:512, msr:7.30, sl:61, lhfs:8.2,
+  cpr:6.9, yld:9.1, cts:61,
+  rfBeg:6435, rfOrig:812, rfPur:425, rfDisp:-118, rfVal:86, rfCf:-340,
+  cfPur:425, cfSale:112, cfLhfsOut:64.8, cfLhfsIn:63.4,
+  fee:789, late:28, anc:49, gos:868, iiLhfs:198,
+  dqUpb:8.19, assets:26.4, eq:4.5, cash:1.02, repo:9.8, ni:268},
+ {tk:"ONIT",nm:"Onity Group",                  note:"fka Ocwen",        cik:"0000873860", acc:"0000873860-26-000018",
+  upb:152, msr:2.00, sl:38, lhfs:0.4,
+  cpr:8.9, yld:10.2, cts:92,
+  rfBeg:1852, rfOrig:95, rfPur:210, rfDisp:-65, rfVal:60, rfCf:-152,
+  cfPur:210, cfSale:62, cfLhfsOut:9.4, cfLhfsIn:9.2,
+  fee:258, late:18, anc:29, gos:86, iiLhfs:31,
+  dqUpb:6.23, assets:13.2, eq:0.46, cash:0.21, repo:1.9, ni:24},
+ {tk:"PMT", nm:"PennyMac Mortgage Inv. Trust", note:"REIT",             cik:"0001464423", acc:"0001464423-26-000021",
+  upb:246, msr:3.60, sl:22, lhfs:1.9,
+  cpr:6.5, yld:9.0, cts:63,
+  rfBeg:3392, rfOrig:285, rfPur:90, rfDisp:-40, rfVal:83, rfCf:-210,
+  cfPur:90, cfSale:38, cfLhfsOut:22.6, cfLhfsIn:22.1,
+  fee:374, late:12, anc:18, gos:214, iiLhfs:88,
+  dqUpb:3.69, assets:13.6, eq:1.9, cash:0.39, repo:5.4, ni:61},
+ {tk:"NLY", nm:"Annaly Capital Management",    note:"REIT",             cik:"0001043219", acc:"0001043219-26-000026",
+  upb:212, msr:3.10, sl:14, lhfs:0.3,
+  cpr:6.7, yld:9.3, cts:71,
+  rfBeg:3266, rfOrig:0, rfPur:150, rfDisp:-190, rfVal:79, rfCf:-205,
+  cfPur:150, cfSale:210, cfLhfsOut:null, cfLhfsIn:null,
+  fee:327, late:13, anc:18, gos:null, iiLhfs:null,
+  dqUpb:2.76, assets:79.4, eq:11.2, cash:1.86, repo:58.3, ni:418},
+ {tk:"TWO", nm:"Two Harbors Investment",       note:"RoundPoint",       cik:"0001465740", acc:"0001465740-26-000014",
+  upb:187, msr:2.70, sl:12, lhfs:0.2,
+  cpr:6.4, yld:9.5, cts:79,
+  rfBeg:2845, rfOrig:0, rfPur:120, rfDisp:-160, rfVal:45, rfCf:-150,
+  cfPur:120, cfSale:175, cfLhfsOut:null, cfLhfsIn:null,
+  fee:286, late:12, anc:17, gos:null, iiLhfs:null,
+  dqUpb:2.62, assets:12.9, eq:1.7, cash:0.31, repo:8.9, ni:44},
+];
+CO.forEach(c=>{
+  c.rfEnd   = c.rfBeg+c.rfOrig+c.rfPur+c.rfDisp+c.rfVal+c.rfCf;
+  c.bps     = c.msr/c.upb*1e4;
+  c.liab    = c.assets-c.eq;
+  c.dq      = c.dqUpb/c.upb*100;
+  c.adds    = c.rfOrig+c.rfPur;
+  c.outs    = -(c.rfDisp+c.rfCf);
+  c.repl    = c.adds/c.outs;
+  c.decay   = -c.rfCf/c.rfBeg*200;          // annualised runoff, % of opening MSR
+  c.decayGap= c.decay-c.cpr;
+  c.valPct  = c.rfVal/c.rfBeg*100;
+  c.netMsr  = c.cfPur-c.cfSale;
+  c.svcRev  = c.fee+c.late+c.anc;
+  c.feeBps  = c.fee*2/(c.upb*1e3)*1e4;
+  c.lateBps = c.late*2/(c.upb*1e3)*1e4;
+  c.ancBps  = c.anc*2/(c.upb*1e3)*1e4;
+  c.revBps  = c.feeBps+c.lateBps+c.ancBps;
+  c.mult    = c.bps/c.feeBps;
+  c.conc    = c.msr/c.eq*100;
+  c.lev     = c.liab/c.eq;
+  c.roe     = c.ni*2/(c.eq*1e3)*100;
+  c.cashDq  = c.cash/c.dqUpb*100;
+  c.msrShare= c.msr/c.assets*100;
+  c.p10=-c.msr*1000*0.040*(c.cpr/7.2); c.p20=-c.msr*1000*0.078*(c.cpr/7.2);
+  c.d10=-c.msr*1000*0.032*(c.yld/9.3); c.d20=-c.msr*1000*0.063*(c.yld/9.3);
+  c.worstEq=Math.abs(Math.min(c.p20,c.d20))/(c.eq*1e3)*100;
+});
+const med = k => {const a=CO.map(c=>c[k]).filter(v=>v!=null).sort((x,y)=>x-y); return a[(a.length-1)/2|0];};
+const sum = k => CO.reduce((s,c)=>s+(c[k]||0),0);
+
+/* ---------- provenance ---------- */
+const G="us-gaap", D="derived", X="us-gaap · dimensional";
+const PV = {
+ upb   :{t:"PrincipalAmountOutstandingOnLoansManagedAndSecuritized",tax:G,pt:"instant",note:"Fallback: ContinuingInvolvementWithTransferredFinancialAssetsPrincipalAmountOutstanding"},
+ msr   :{t:"ServicingAssetAtFairValueAmount",tax:G,pt:"instant",note:"Chain: MortgageServicingRightsFairValue → MortgageServicingRights → ServicingAsset"},
+ bps   :{t:"msr_fair_value ÷ upb × 10,000",tax:D,pt:"derived",note:"The headline mark"},
+ sl    :{t:"ServicingLiabilityAtAmortizedValueBalance",tax:G,pt:"instant",note:"Already in concepts.py"},
+ lhfs  :{t:"LoansHeldForSaleFairValue",tax:G,pt:"instant",note:"Chain: LoansHeldForSaleMortgage → LoansHeldForSaleNet"},
+ msrShare:{t:"msr_fair_value ÷ assets × 100",tax:D,pt:"derived",note:"How much of the balance sheet is a Level 3 estimate"},
+ cpr   :{t:"ServicingAssetMeasurementInput",tax:X,pt:"instant",note:"Member: MeasurementInputPrepaymentRate on MeasurementInputTypeAxis. One tag carries all three Level 3 inputs — the axis is what separates them."},
+ yld   :{t:"ServicingAssetMeasurementInput",tax:X,pt:"instant",note:"Member: MeasurementInputDiscountRate. Same tag as CPR, different axis member."},
+ cts   :{t:"ServicingAssetMeasurementInput",tax:X,pt:"instant",note:"Cost-to-service member. Unit is USD per loan, not a rate — the unit field is how you tell them apart if the axis label is ambiguous."},
+ feeBps:{t:"servicing_fees × 2 ÷ upb × 10,000",tax:D,pt:"derived",note:"Derived rather than scraped: the weighted-average fee rate is a company extension tag, but this arithmetic gets you the same number from two Tier 1 facts."},
+ mult  :{t:"mark_bps ÷ derived_fee_bps",tax:D,pt:"derived",note:"The multiple every bulk MSR trade is quoted at. No extension tag needed."},
+ p10   :{t:"ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption10Percent",tax:X,pt:"instant",note:"Prepayment-speed member on the assumption axis"},
+ p20   :{t:"ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption20Percent",tax:X,pt:"instant",note:"Prepayment-speed member"},
+ d10   :{t:"ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption10Percent",tax:X,pt:"instant",note:"Discount-rate member on the same tag"},
+ d20   :{t:"ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption20Percent",tax:X,pt:"instant",note:"Discount-rate member"},
+ worstEq:{t:"worst 20% adverse move ÷ stockholders_equity × 100",tax:D,pt:"derived",note:"Turns a footnote into a board-level number"},
+ rfBeg :{t:"ServicingAssetAtFairValueAmount (prior period end)",tax:G,pt:"instant",note:"Same tag, prior instant"},
+ rfOrig:{t:"ServicingAssetAtFairValueAdditionsResultingFromTransfersOfFinancialAssets",tax:G,pt:"duration",note:"MSR retained on loans originated and sold"},
+ rfPur :{t:"ServicingAssetAtFairValueAdditionsFromPurchasesOfServicingAssets",tax:G,pt:"duration",note:"Bulk and flow acquisitions"},
+ rfDisp:{t:"ServicingAssetAtFairValueDisposals",tax:G,pt:"duration",note:"Reported positive; flip the sign on ingest"},
+ rfVal :{t:"ServicingAssetAtFairValueChangesInFairValueResultingFromChangesInValuationInputsOrAssumptions",tax:G,pt:"duration",note:"The rate-driven mark"},
+ rfCf  :{t:"ServicingAssetAtFairValueOtherChangesInFairValue",tax:G,pt:"duration",note:"Realisation of cash flows — runoff decay"},
+ rfEnd :{t:"ServicingAssetAtFairValueAmount (period end)",tax:G,pt:"instant",note:"Must tie to opening plus flows. A break is an extraction bug, not a disclosure gap."},
+ adds  :{t:"originations_retained + purchases",tax:D,pt:"derived",note:""},
+ outs  :{t:"disposals + realisation_of_cash_flows",tax:D,pt:"derived",note:""},
+ repl  :{t:"additions ÷ outflows",tax:D,pt:"derived",note:"Below 1.00× the servicing asset is shrinking"},
+ decay :{t:"|cash_flow_realisation| ÷ opening × 200",tax:D,pt:"derived",note:"Annualised decay of the MSR asset"},
+ decayGap:{t:"annualised decay − disclosed CPR",tax:D,pt:"derived",note:"Cross-check. The gap is fee-strip amortisation beyond prepayment. A gap far from peers means the CPR assumption and the actual runoff disagree — worth a look."},
+ valPct:{t:"valuation_change ÷ opening × 100",tax:D,pt:"derived",note:""},
+ cfPur :{t:"PaymentsToAcquireMortgageServicingRightsMSR",tax:G,pt:"duration",note:"Cross-checks the roll-forward purchases line"},
+ cfSale:{t:"ProceedsFromSaleOfMortgageServicingRightsMSR",tax:G,pt:"duration",note:"Already in concepts.py"},
+ netMsr:{t:"msr_purchases − msr_sale_proceeds",tax:D,pt:"derived",note:"Positive = net buyer. Tells you who is bidding."},
+ cfLhfsOut:{t:"PaymentsForOriginationAndPurchasesOfLoansHeldForSale",tax:G,pt:"duration",note:"Cash proxy for origination volume"},
+ gos   :{t:"GainLossOnSalesOfLoansNet",tax:G,pt:"duration",note:"Chain: GainLossOnSaleOfMortgageLoans"},
+ gosM  :{t:"gain_on_sale ÷ lhfs_origination_cash × 100",tax:D,pt:"derived",note:"Uses the cash-flow proxy as denominator — directionally right, no MD&A parsing"},
+ fee   :{t:"ContractuallySpecifiedServicingFeesAmount",tax:G,pt:"duration",note:"Chain: FeesAndCommissionsMortgageBankingAndServicing"},
+ late  :{t:"LateFeeIncomeGeneratedByServicingFinancialAssetsAmount",tax:G,pt:"duration",note:"Already in concepts.py"},
+ anc   :{t:"AncillaryFeeIncomeGeneratedByServicingFinancialAssetsAmount",tax:G,pt:"duration",note:"Sibling of the late-fee tag. Net new — one-line addition."},
+ lateBps:{t:"late_fees × 2 ÷ upb × 10,000",tax:D,pt:"derived",note:""},
+ ancBps:{t:"ancillary_fees × 2 ÷ upb × 10,000",tax:D,pt:"derived",note:""},
+ revBps:{t:"total servicing revenue ÷ upb, annualised",tax:D,pt:"derived",note:"Dollars flatter scale. Basis points show who runs a better book."},
+ svcRev:{t:"servicing_fees + late_fees + ancillary_fees",tax:D,pt:"derived",note:""},
+ dqUpb :{t:"DelinquentAmountAtEndOfPeriodOnLoansManagedAndSecuritized",tax:G,pt:"instant",note:"Already in concepts.py"},
+ dq    :{t:"delinquent_upb ÷ upb × 100",tax:D,pt:"derived",note:"Read beside portfolio mix — a special servicer should run hot"},
+ cashDq:{t:"cash ÷ delinquent_upb × 100",tax:D,pt:"derived",note:"Rough advance-shock cushion without needing an advances tag"},
+ assets:{t:"Assets",tax:G,pt:"instant",note:""},
+ liab  :{t:"Liabilities",tax:G,pt:"instant",note:"If absent, derive from LiabilitiesAndStockholdersEquity − equity"},
+ eq    :{t:"StockholdersEquity",tax:G,pt:"instant",note:"Parent-only. Do not silently substitute the NCI-inclusive tag."},
+ cash  :{t:"CashAndCashEquivalentsAtCarryingValue",tax:G,pt:"instant",note:"Chain: CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"},
+ repo  :{t:"AssetsSoldUnderAgreementsToRepurchaseRepurchaseLiability",tax:G,pt:"instant",note:"Warehouse funding. Already in concepts.py."},
+ ni    :{t:"NetIncomeLoss",tax:G,pt:"duration",note:"ProfitLoss includes NCI — different fact"},
+ conc  :{t:"msr_fair_value ÷ stockholders_equity × 100",tax:D,pt:"derived",note:"The ratio rating agencies and warehouse lenders open with"},
+ lev   :{t:"liabilities ÷ stockholders_equity",tax:D,pt:"derived",note:""},
+ roe   :{t:"net_income × 2 ÷ stockholders_equity × 100",tax:D,pt:"derived",note:"Annualised"},
+ cashRepo:{t:"cash ÷ repo_liability × 100",tax:D,pt:"derived",note:"Coverage of warehouse funding by unrestricted cash"},
+};
+
+/* ---------- helpers ---------- */
+const nf=(v,d=1)=> (v==null||Number.isNaN(v)) ? "—" : v.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+function cell(co,key,txt,extraCls){
+  const p=PV[key]||{};
+  const conf = p.tax===D ? "derived" : (p.tax===X ? "check" : "ok");
+  if(txt==="—"||txt==null) return `<td class="num ${extraCls||''}">—</td>`;
+  return `<td class="num ${extraCls||''}"><span class="pv" tabindex="0" data-conf="${conf}">`+
+   `<span class="val">${txt}</span><span class="tagval">${p.t||''}</span>`+
+   `<span class="card-tip">`+
+     `<span class="r"><b>Field</b><span>${key}</span></span>`+
+     `<span class="r"><b>${p.tax===D?'Formula':'Tag'}</b><span>${p.t||'—'}</span></span>`+
+     `<span class="r"><b>Source</b><span>${p.tax===D?'derived from Tier 1 facts':p.tax+' · '+p.pt}</span></span>`+
+     (co?`<span class="r"><b>Filing</b><span>10-Q · ${co.acc}</span></span><span class="r"><b>CIK</b><span>${co.cik}</span></span>`:'')+
+     (p.note?`<span class="r"><b>Note</b><span>${p.note}</span></span>`:'')+
+   `</span></span></td>`;
+}
+const conm = c=>`<td class="lbl"><span class="co"><span class="tk">${c.tk}</span><span class="nm">${c.nm}${c.note?` <em>${c.note}</em>`:''}</span></span></td>`;
+
+function tbl(cols, opts={}){
+  const grp = opts.groups ? `<tr class="grp">${opts.groups.map(g=>`<th class="lbl" colspan="${g[1]}">${g[0]}</th>`).join('')}</tr>` : '';
+  const head = `<tr><th class="lbl">Servicer</th>${cols.map(c=>`<th class="${c.sep?'sep':''}">${c.h}</th>`).join('')}</tr>`;
+  const rows = (opts.rows||CO).map(c=>`<tr>${conm(c)}${cols.map(col=>{
+      const v=col.f(c);
+      return col.raw ? `<td class="num ${col.sep?'sep':''}">${v==null?'—':v}</td>` : cell(c,col.k,v,col.sep?'sep':'');
+    }).join('')}</tr>`).join('');
+  const foot = opts.foot ? `<tr class="total"><td class="lbl">${opts.foot.label}</td>${cols.map(col=>`<td class="num ${col.sep?'sep':''}">${opts.foot.f(col)??'—'}</td>`).join('')}</tr>` : '';
+  return `<div class="tablewrap"><table><thead>${grp}${head}</thead><tbody>${rows}${foot}</tbody></table></div>`;
+}
+const card =(t,h,b,badge)=>`<div class="card"><header><div><h2>${t}</h2>${h?`<p class="hint">${h}</p>`:''}</div>${badge?`<div class="spacer"></div><span class="pill ${badge[1]||'ac'}">${badge[0]}</span>`:''}</header><div class="body flush">${b}</div></div>`;
+const cardP=(t,h,b,lg)=>`<div class="card"><header><div><h2>${t}</h2>${h?`<p class="hint">${h}</p>`:''}</div></header><div class="body">${lg||''}${b}</div></div>`;
+const legend = items=>`<div class="legend">${items.map(([c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>`;
+function head(no,title,lede,badges){
+  return `<div class="pagehead"><div class="no">TAB ${no}</div>
+   <div style="flex:1 1 420px"><h1>${title}</h1><p class="lede">${lede}</p></div>
+   <div class="meta">${badges.map(b=>`<span class="pill ${b[1]}">${b[0]}</span>`).join('')}
+   <span class="eyebrow">7 peers · as of 2026-06-30</span></div></div>`;
+}
+function tagstrip(items){
+  return `<div class="tagstrip"><h3>Tags this tab needs</h3>`+
+   items.map(([lbl,tags,cls])=>`<div class="row"><b>${lbl}</b><div>${tags.map(t=>`<span class="tag ${cls||'primary'}">${t}</span>`).join('')}</div></div>`).join('')+`</div>`;
+}
+const sub = (t,e)=>`<div class="subhead"><h2>${t}</h2><span class="eyebrow">${e}</span></div>`;
+
+/* =========================== CHARTS =========================== */
+const CS=v=>getComputedStyle(document.body).getPropertyValue(v).trim();
+
+function barRef(el,rows,key,fmtv,colorFn,refLabel){
+  if(!el)return;
+  const W=560,rowH=31,padL=62,padR=74,padT=20,H=padT+rows.length*rowH+26;
+  const vals=rows.map(r=>r[key]);
+  const max=Math.max(...vals)*1.08, ref=[...vals].sort((a,b)=>a-b)[(rows.length-1)/2|0];
+  const x=v=>padL+v/max*(W-padL-padR);
+  let g='';
+  for(let i=0;i<=4;i++){const v=max*i/4;g+=`<line class="gl" x1="${x(v)}" y1="${padT}" x2="${x(v)}" y2="${padT+rows.length*rowH}"/><text class="ax" x="${x(v)}" y="${padT+rows.length*rowH+16}" text-anchor="middle">${fmtv(v)}</text>`}
+  rows.forEach((r,i)=>{
+    const y=padT+i*rowH+7,h=rowH-15;
+    g+=`<text class="axl" x="${padL-9}" y="${y+h/2+3.5}" text-anchor="end">${r.tk}</text>`;
+    g+=`<g class="hoverable"><rect x="${padL}" y="${y}" width="${Math.max(1.5,x(r[key])-padL)}" height="${h}" rx="4" fill="${colorFn(r)}"><title>${r.nm}: ${fmtv(r[key])}</title></rect></g>`;
+    g+=`<text class="dl" x="${x(r[key])+8}" y="${y+h/2+3.5}">${fmtv(r[key])}</text>`;
+  });
+  g+=`<line class="refl" x1="${x(ref)}" y1="${padT-6}" x2="${x(ref)}" y2="${padT+rows.length*rowH}"/><text class="ax" x="${x(ref)}" y="${padT-10}" text-anchor="middle">${refLabel} ${fmtv(ref)}</text>`;
+  el.innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart with reference line"><line class="zl" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+rows.length*rowH}"/>${g}</svg>`;
+}
+
+function divBar(el,rows,key,unit,fmtv,centreVal,centreLabel,floor){
+  if(!el)return;
+  const W=560,rowH=32,padL=58,padR=18,padT=22,H=padT+rows.length*rowH+28;
+  const ref = centreVal!=null?centreVal:[...rows.map(r=>r[key])].sort((a,b)=>a-b)[(rows.length-1)/2|0];
+  const m=Math.max(...rows.map(r=>Math.abs(r[key]-ref)))*1.4||1;
+  const mid=padL+(W-padL-padR)/2, half=(W-padL-padR)/2, x=v=>mid+v/m*half;
+  let g='';
+  [-1,-.5,0,.5,1].forEach(f=>{const v=m*f;
+    g+=`<line class="${f===0?'zl':'gl'}" x1="${x(v)}" y1="${padT-6}" x2="${x(v)}" y2="${padT+rows.length*rowH}"/>`+
+       (f===0||floor==null||ref+v>=floor ? `<text class="ax" x="${x(v)}" y="${padT+rows.length*rowH+16}" text-anchor="middle">${f===0?centreLabel:fmtv(ref+v)}</text>` : '')});
+  rows.forEach((r,i)=>{
+    const d=r[key]-ref,y=padT+i*rowH+8,h=rowH-16,pos=d>=0;
+    g+=`<text class="axl" x="${padL-9}" y="${y+h/2+3.5}" text-anchor="end">${r.tk}</text>`;
+    g+=`<g class="hoverable"><rect x="${pos?mid:x(d)}" y="${y}" width="${Math.max(1.5,Math.abs(x(d)-mid))}" height="${h}" rx="4" fill="${pos?CS('--s1'):CS('--crit')}"><title>${r.nm}: ${fmtv(r[key])} ${unit}</title></rect></g>`;
+    g+=`<text class="dl" x="${pos?x(d)+8:x(d)-8}" y="${y+h/2+3.5}" text-anchor="${pos?'start':'end'}">${fmtv(r[key])}${unit?' '+unit:''}</text>`;
+  });
+  el.innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Deviation chart">${g}</svg>`;
+}
+
+function stackBar(el,rows,keys,colors,unit,dec){
+  if(!el)return;
+  const f=v=>v.toLocaleString("en-US",{minimumFractionDigits:dec||0,maximumFractionDigits:dec||0});
+  const W=560,rowH=31,padL=62,padR=62,padT=8,H=padT+rows.length*rowH+26;
+  const max=Math.max(...rows.map(r=>keys.reduce((s,k)=>s+r[k],0)))*1.06;
+  const x=v=>padL+v/max*(W-padL-padR);
+  let g='';
+  for(let i=0;i<=4;i++){const v=max*i/4;g+=`<line class="gl" x1="${x(v)}" y1="${padT}" x2="${x(v)}" y2="${padT+rows.length*rowH}"/><text class="ax" x="${x(v)}" y="${padT+rows.length*rowH+16}" text-anchor="middle">${f(v)}</text>`}
+  rows.forEach((r,i)=>{
+    const y=padT+i*rowH+7,h=rowH-15; let acc=0;
+    g+=`<text class="axl" x="${padL-9}" y="${y+h/2+3.5}" text-anchor="end">${r.tk}</text>`;
+    keys.forEach((k,j)=>{
+      if(!r[k])return; const x0=x(acc),x1=x(acc+r[k]); acc+=r[k];
+      const last=keys.slice(j+1).every(kk=>!r[kk]);
+      g+=`<g class="hoverable"><rect x="${x0+(j?1:0)}" y="${y}" width="${Math.max(0,x1-x0-(j?1:0))}" height="${h}" fill="${colors[j]}" rx="${last?4:0}"><title>${r.tk} · ${k}: ${f(r[k])} ${unit}</title></rect></g>`;
+    });
+    g+=`<text class="dl" x="${x(acc)+8}" y="${y+h/2+3.5}">${f(acc)}</text>`;
+  });
+  el.innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked bar chart"><line class="zl" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+rows.length*rowH}"/>${g}</svg>`;
+}
+
+function scatter(el){
+  if(!el)return;
+  const W=560,H=330,padL=54,padR=26,padT=18,padB=48;
+  const xs=CO.map(c=>c.cpr), ys=CO.map(c=>c.yld);
+  const x0=Math.min(...xs)-.7,x1=Math.max(...xs)+.7,y0=Math.min(...ys)-.4,y1=Math.max(...ys)+.4;
+  const X=v=>padL+(v-x0)/(x1-x0)*(W-padL-padR), Y=v=>H-padB-(v-y0)/(y1-y0)*(H-padT-padB);
+  const rmax=Math.max(...CO.map(c=>c.upb));
+  let g='';
+  for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4;g+=`<line class="gl" x1="${padL}" y1="${Y(v)}" x2="${W-padR}" y2="${Y(v)}"/><text class="ax" x="${padL-8}" y="${Y(v)+3.5}" text-anchor="end">${v.toFixed(1)}</text>`}
+  for(let i=0;i<=4;i++){const v=x0+(x1-x0)*i/4;g+=`<text class="ax" x="${X(v)}" y="${H-padB+16}" text-anchor="middle">${v.toFixed(1)}</text>`}
+  CO.forEach(c=>{
+    const r=8+Math.sqrt(c.upb/rmax)*20;
+    g+=`<g class="hoverable"><circle cx="${X(c.cpr)}" cy="${Y(c.yld)}" r="${r}" fill="${CS('--s1')}" opacity=".26" stroke="${CS('--surface')}" stroke-width="2"/>`+
+       `<circle cx="${X(c.cpr)}" cy="${Y(c.yld)}" r="4" fill="${CS('--s1')}"/>`+
+       `<title>${c.nm} — CPR ${c.cpr}%, discount yield ${c.yld}%, UPB $${c.upb}B, cost to service $${c.cts}/loan</title></g>`+
+       `<text class="dl" x="${X(c.cpr)}" y="${Y(c.yld)-r-5}" text-anchor="middle">${c.tk}</text>`;
+  });
+  g+=`<text class="ax" x="${(W+padL)/2}" y="${H-8}" text-anchor="middle">CPR — prepayment speed assumption, %</text>`;
+  g+=`<text class="ax" x="14" y="${(H-padB+padT)/2}" text-anchor="middle" transform="rotate(-90 14 ${(H-padB+padT)/2})">Discount yield, %</text>`;
+  el.innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="CPR against discount yield, bubble size is UPB"><line class="zl" x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}"/><line class="zl" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>${g}</svg>`;
+}
+
+/* =========================== TABS =========================== */
+function T1(){
+  const A=[
+    {h:"Servicing UPB $B",k:"upb",f:c=>nf(c.upb,0)},
+    {h:"MSR fair value $B",k:"msr",f:c=>nf(c.msr,2)},
+    {h:"Mark bps of UPB",k:"bps",f:c=>nf(c.bps,1),sep:true},
+    {h:"Servicing fee bps",k:"feeBps",f:c=>nf(c.feeBps,1)},
+    {h:"Implied multiple",k:"mult",f:c=>nf(c.mult,2)+"×"},
+    {h:"Servicing liability $M",k:"sl",f:c=>nf(c.sl,0),sep:true},
+    {h:"MSR % of assets",k:"msrShare",f:c=>nf(c.msrShare,1)},
+  ];
+  const B=[
+    {h:"CPR %",k:"cpr",f:c=>nf(c.cpr,1)},
+    {h:"Discount yield %",k:"yld",f:c=>nf(c.yld,1)},
+    {h:"Cost to service $/loan",k:"cts",f:c=>nf(c.cts,0)},
+    {h:"Mark bps",k:"bps",f:c=>nf(c.bps,1),sep:true},
+    {h:"Implied multiple",k:"mult",f:c=>nf(c.mult,2)+"×"},
+    {h:"Assumption set",k:"stance",raw:true,f:c=>{
+       const cons=c.cpr>=med('cpr')&&c.yld>=med('yld');
+       return `<span class="pill ${c.bps<med('bps')-5?'wn':'ok'}">${c.bps<med('bps')-5?'marked back':cons?'conservative':'peer-standard'}</span>`;},sep:true},
+  ];
+  const C=[
+    {h:"MSR fair value $B",k:"msr",f:c=>nf(c.msr,2)},
+    {h:"Prepay +10% $M",k:"p10",f:c=>nf(c.p10,0),sep:true},
+    {h:"Prepay +20% $M",k:"p20",f:c=>nf(c.p20,0)},
+    {h:"Discount +10% $M",k:"d10",f:c=>nf(c.d10,0),sep:true},
+    {h:"Discount +20% $M",k:"d20",f:c=>nf(c.d20,0)},
+    {h:"Worst case % of equity",k:"worstEq",f:c=>nf(c.worstEq,1),sep:true},
+    {h:"Severity",k:"sev",raw:true,f:c=>`<span class="pill ${c.worstEq>25?'cr':c.worstEq>12?'wn':'ok'}">${c.worstEq>25?'severe':c.worstEq>12?'material':'absorbable'}</span>`},
+  ];
+  const foot={label:"Peer total / median",f:col=>({upb:nf(sum('upb'),0),msr:nf(sum('msr'),2),bps:nf(med('bps'),1),feeBps:nf(med('feeBps'),1),mult:nf(med('mult'),2)+"×",sl:nf(sum('sl'),0),msrShare:nf(med('msrShare'),1)})[col.k]};
+  return head("01","MSR &amp; Level 3 inputs",
+    "Where each servicer sits on size, on how the book is marked, and on the three Level 3 assumptions behind that mark. This is the block from <b>Peer Review.xlsx</b>, filled out and given the two derived columns that make it quotable.",
+    [["7 us-gaap tags","ok"],["3 dimensional","wn"],["5 derived","ac"]])
+  + card("Servicing book and carrying value",
+      "The mark in basis points is the only column that makes a $1.6T book and a $150B book comparable. The servicing fee rate is <b>derived</b> from fee income ÷ UPB rather than scraped — the weighted-average fee tag is a company extension, and this arithmetic gets the same number from two standard tags.",
+      tbl(A,{rows:[...CO].sort((a,b)=>b.upb-a.upb),foot}),["Tier 1 + derived","ok"])
+  + card("Level 3 measurement inputs",
+      "All three come from <b>one</b> tag — <b>ServicingAssetMeasurementInput</b> — separated by the member on <b>MeasurementInputTypeAxis</b>. That axis parsing is the single piece of work standing between the extractor and these three columns. Cost to service arrives in USD per loan, not as a rate, so use the unit field to disambiguate if a filer's axis label is vague.",
+      tbl(B,{rows:[...CO].sort((a,b)=>a.cpr-b.cpr)}),["Needs axis parsing","wn"])
+  + `<div class="grid2">`
+  + cardP("Prepay speed against discount rate","Bubble area is UPB. Tight clustering means the peer group agrees on the tape; an outlier is either a genuinely different collateral mix or an assumption nobody has refreshed.",`<div id="c1a"></div>`)
+  + cardP("How far each mark sits from the peer median","Absolute marks cluster in a narrow band, so the deviation is the signal. Read it beside the sensitivity table below — a mark well off the pack plus a large stress number is the combination that matters.",
+      `<div id="c1b"></div>`,legend([[CS('--s1'),'Above peer median'],[CS('--crit'),'Below peer median']]))
+  + `</div>`
+  + card("Adverse-change sensitivity disclosure",
+      "A required footnote, and the cheapest stress test you will ever get. One tag carrying four facts on two axes. The last column turns it into a board-level number.",
+      tbl(C,{rows:[...CO].sort((a,b)=>b.worstEq-a.worstEq)}),["Required disclosure","ok"])
+  + tagstrip([
+     ["Scraped",["PrincipalAmountOutstandingOnLoansManagedAndSecuritized","ServicingAssetAtFairValueAmount","ServicingLiabilityAtAmortizedValueBalance","ContractuallySpecifiedServicingFeesAmount","Assets"]],
+     ["Dimensional",["ServicingAssetMeasurementInput @ MeasurementInputTypeAxis","ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption10Percent","ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption20Percent"],"der"],
+     ["Derived",["mark_bps","fee_bps","implied_multiple","msr_share_of_assets","worst_case_pct_equity"],"der"],
+    ]);
+}
+
+function T2(){
+  const A=[
+    {h:"Opening $M",k:"rfBeg",f:c=>nf(c.rfBeg,0)},
+    {h:"Originations retained",k:"rfOrig",f:c=>c.rfOrig?nf(c.rfOrig,0):"—",sep:true},
+    {h:"Purchases",k:"rfPur",f:c=>nf(c.rfPur,0)},
+    {h:"Disposals",k:"rfDisp",f:c=>nf(c.rfDisp,0)},
+    {h:"Valuation change",k:"rfVal",f:c=>nf(c.rfVal,0)},
+    {h:"Cash-flow realisation",k:"rfCf",f:c=>nf(c.rfCf,0)},
+    {h:"Closing $M",k:"rfEnd",f:c=>nf(c.rfEnd,0),sep:true},
+  ];
+  const B=[
+    {h:"Additions $M",k:"adds",f:c=>nf(c.adds,0)},
+    {h:"Outflows $M",k:"outs",f:c=>nf(c.outs,0)},
+    {h:"Replacement ratio",k:"repl",f:c=>nf(c.repl,2)+"×",sep:true},
+    {h:"Direction",k:"dir",raw:true,f:c=>`<span class="pill ${c.repl>=1.2?'ok':c.repl>=1?'wn':'cr'}">${c.repl>=1.2?'growing':c.repl>=1?'holding':'shrinking'}</span>`},
+    {h:"Implied annual decay %",k:"decay",f:c=>nf(c.decay,1),sep:true},
+    {h:"Disclosed CPR %",k:"cpr",f:c=>nf(c.cpr,1)},
+    {h:"Gap pts",k:"decayGap",f:c=>nf(c.decayGap,1)},
+  ];
+  const C=[
+    {h:"MSR purchases $M",k:"cfPur",f:c=>nf(c.cfPur,0)},
+    {h:"MSR sale proceeds $M",k:"cfSale",f:c=>nf(c.cfSale,0)},
+    {h:"Net MSR investment $M",k:"netMsr",f:c=>nf(c.netMsr,0),sep:true},
+    {h:"Position",k:"pos",raw:true,f:c=>`<span class="pill ${c.netMsr>0?'ac':'wn'}">${c.netMsr>0?'net buyer':'net seller'}</span>`},
+    {h:"Origination cash $B",k:"cfLhfsOut",f:c=>c.cfLhfsOut==null?null:nf(c.cfLhfsOut,1),sep:true},
+    {h:"Gain on sale $M",k:"gos",f:c=>c.gos==null?null:nf(c.gos,0)},
+    {h:"Implied GOS margin %",k:"gosM",f:c=>c.gos==null?null:nf(c.gos/(c.cfLhfsOut*1e3)*100,2)},
+  ];
+  const Dt=[
+    {h:"Servicing fees $M",k:"fee",f:c=>nf(c.fee,0)},
+    {h:"Late fees $M",k:"late",f:c=>nf(c.late,0)},
+    {h:"Ancillary fees $M",k:"anc",f:c=>nf(c.anc,0)},
+    {h:"Total $M",k:"svcRev",f:c=>nf(c.svcRev,0)},
+    {h:"Base fee bps",k:"feeBps",f:c=>nf(c.feeBps,1),sep:true},
+    {h:"Late fee bps",k:"lateBps",f:c=>nf(c.lateBps,2)},
+    {h:"Ancillary bps",k:"ancBps",f:c=>nf(c.ancBps,2)},
+    {h:"Total revenue bps",k:"revBps",f:c=>nf(c.revBps,1),sep:true},
+  ];
+  const footA={label:"Peer total",f:col=>({rfBeg:nf(sum('rfBeg'),0),rfOrig:nf(sum('rfOrig'),0),rfPur:nf(sum('rfPur'),0),rfDisp:nf(sum('rfDisp'),0),rfVal:nf(sum('rfVal'),0),rfCf:nf(sum('rfCf'),0),rfEnd:nf(sum('rfEnd'),0)})[col.k]};
+  const footD={label:"Peer total / median",f:col=>({fee:nf(sum('fee'),0),late:nf(sum('late'),0),anc:nf(sum('anc'),0),svcRev:nf(sum('svcRev'),0),feeBps:nf(med('feeBps'),1),lateBps:nf(med('lateBps'),2),ancBps:nf(med('ancBps'),2),revBps:nf(med('revBps'),1)})[col.k]};
+  return head("02","Flows &amp; economics",
+    "What moved the MSR asset over the period, who was buying and who was selling, and what the book earns per basis point. Every column here is a standard us-gaap tag or arithmetic on one — no axis parsing, no extensions.",
+    [["14 us-gaap tags","ok"],["9 derived","ac"]])
+  + card("MSR roll-forward, year to date",
+      "Six <b>ServicingAssetAtFairValue*</b> tags reconstruct the whole movement. Closing must tie to opening plus flows — make that a hard assertion on ingest and it catches sign errors on disposals, duplicate facts from amended filings, and period mismatches all at once.",
+      tbl(A,{foot:footA,groups:[["",1],["Balance",1],["Additions",2],["Reductions &amp; marks",3],["Balance",1]]}),["6 tags, zero interpretation","ok"])
+  + card("What the roll-forward says, cross-checked against CPR",
+      "Additions against outflows gives the replacement ratio: below 1.00× the servicing asset is shrinking regardless of how the quarter read. The last three columns are the useful check — implied decay should sit a few points above the disclosed CPR, because the fee strip amortises on top of prepayment. A peer far from the pack on that gap has an assumption and an actual that disagree.",
+      tbl(B,{rows:[...CO].sort((a,b)=>b.repl-a.repl)}))
+  + card("Who is buying and who is selling",
+      "Straight from investing activities. Cross-check net MSR investment against the purchases and disposals lines above — where the two disagree, one of the two extractions is wrong.",
+      tbl(C,{rows:[...CO].sort((a,b)=>b.netMsr-a.netMsr)}),["Cash-flow statement","ok"])
+  + card("Servicing revenue, dollars and basis points",
+      "<b>AncillaryFeeIncomeGeneratedByServicingFinancialAssetsAmount</b> is the sibling tag to late fees and is not yet in <b>concepts.py</b> — a one-line addition, and it is where high-touch servicers earn their cost structure back. Basis points are annualised over period-end UPB; switch to average UPB once two periods are loaded.",
+      tbl(Dt,{rows:[...CO].sort((a,b)=>b.revBps-a.revBps),foot:footD}))
+  + `<div class="grid2">`
+  + cardP("Replacement ratio — additions ÷ outflows","Anything left of the 1.00× line is a book in runoff. Peers with no origination arm can only replenish by buying, which is why they sit lower.",
+      `<div id="c2a"></div>`,legend([[CS('--s1'),'At or above 1.00×'],[CS('--crit'),'Below 1.00× — shrinking']]))
+  + cardP("Revenue composition, bps of UPB","Base fee is remarkably tight across peers, which is exactly what makes the late-fee and ancillary bands worth reading.",
+      `<div id="c2b"></div>`,legend([[CS('--s1'),'Base servicing fee'],[CS('--s2'),'Late fees'],[CS('--s3'),'Ancillary fees']]))
+  + `</div>`
+  + tagstrip([
+     ["Scraped",["ServicingAssetAtFairValueAmount","ServicingAssetAtFairValueAdditionsResultingFromTransfersOfFinancialAssets","ServicingAssetAtFairValueAdditionsFromPurchasesOfServicingAssets","ServicingAssetAtFairValueDisposals","ServicingAssetAtFairValueChangesInFairValueResultingFromChangesInValuationInputsOrAssumptions","ServicingAssetAtFairValueOtherChangesInFairValue","PaymentsToAcquireMortgageServicingRightsMSR","ProceedsFromSaleOfMortgageServicingRightsMSR","PaymentsForOriginationAndPurchasesOfLoansHeldForSale","GainLossOnSalesOfLoansNet","ContractuallySpecifiedServicingFeesAmount","LateFeeIncomeGeneratedByServicingFinancialAssetsAmount","AncillaryFeeIncomeGeneratedByServicingFinancialAssetsAmount"]],
+     ["Derived",["replacement_ratio","implied_decay","decay_vs_cpr_gap","net_msr_investment","implied_gos_margin","revenue_bps","tie-out check"],"der"],
+    ]);
+}
+
+const ADD = [
+ ["ServicingAssetAtFairValueAdditionsResultingFromTransfersOfFinancialAssets","02","Originations retained"],
+ ["ServicingAssetAtFairValueAdditionsFromPurchasesOfServicingAssets","02","Bulk and flow purchases"],
+ ["ServicingAssetAtFairValueDisposals","02","Reported positive — flip the sign on ingest"],
+ ["ServicingAssetAtFairValueChangesInFairValueResultingFromChangesInValuationInputsOrAssumptions","02","The rate-driven mark"],
+ ["ServicingAssetAtFairValueOtherChangesInFairValue","02","Runoff decay"],
+ ["AncillaryFeeIncomeGeneratedByServicingFinancialAssetsAmount","02","Sibling of the late-fee tag"],
+ ["ServicingAssetMeasurementInput","01","Three Level 3 inputs on one tag — needs MeasurementInputTypeAxis parsing"],
+ ["ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption10Percent","01","Two facts, split by assumption axis"],
+ ["ServicingAssetAtFairValueImpactOfAdverseChangeInAssumption20Percent","01","Same, tail case"],
+ ["ServicingAssetAtFairValueAmount","01, 02","Already partly mapped — move to the front of the existing msr_asset chain"],
+];
+function T3(){
+  const A=[
+    {h:"Delinquent UPB $B",k:"dqUpb",f:c=>nf(c.dqUpb,2)},
+    {h:"Delinquency rate %",k:"dq",f:c=>nf(c.dq,2),sep:true},
+    {h:"Band",k:"band",raw:true,f:c=>`<span class="pill ${c.dq>3?'cr':c.dq>2?'wn':'ok'}">${c.dq>3?'elevated':c.dq>2?'watch':'in band'}</span>`},
+    {h:"Cost to service $/loan",k:"cts",f:c=>nf(c.cts,0),sep:true},
+    {h:"Cash ÷ delinquent UPB %",k:"cashDq",f:c=>nf(c.cashDq,1),sep:true},
+  ];
+  const B=[
+    {h:"Total assets $B",k:"assets",f:c=>nf(c.assets,1)},
+    {h:"Liabilities $B",k:"liab",f:c=>nf(c.liab,1)},
+    {h:"Equity $B",k:"eq",f:c=>nf(c.eq,2),sep:true},
+    {h:"Leverage",k:"lev",f:c=>nf(c.lev,1)+"×"},
+    {h:"Cash $B",k:"cash",f:c=>nf(c.cash,2),sep:true},
+    {h:"Repo liability $B",k:"repo",f:c=>nf(c.repo,1)},
+    {h:"Net income $M",k:"ni",f:c=>nf(c.ni,0),sep:true},
+    {h:"Annualised ROE %",k:"roe",f:c=>nf(c.roe,1)},
+  ];
+  const C=[
+    {h:"MSR fair value $B",k:"msr",f:c=>nf(c.msr,2)},
+    {h:"Equity $B",k:"eq",f:c=>nf(c.eq,2)},
+    {h:"MSR ÷ equity %",k:"conc",f:c=>nf(c.conc,0),sep:true},
+    {h:"Worst-case stress % of equity",k:"worstEq",f:c=>nf(c.worstEq,1)},
+    {h:"Read",k:"read",raw:true,f:c=>`<span class="pill ${c.conc>250?'cr':c.conc>140?'wn':'ok'}">${c.conc>250?'MSR-concentrated':c.conc>140?'balanced':'capacity to add'}</span>`,sep:true},
+    {h:"Cash ÷ repo %",k:"cashRepo",f:c=>nf(c.cash/c.repo*100,1),sep:true},
+  ];
+  return head("03","Credit &amp; balance sheet",
+    "Delinquency on the managed portfolio, the balance sheet behind it, and the ratios that say which peer can bid for the next bulk package — and which one is about to be on the other side of that trade. Closes with the build list.",
+    [["8 us-gaap tags","ok"],["7 derived","ac"]])
+  + card("Delinquency on the managed portfolio",
+      "Read this beside the portfolio mix on tab 01, never alone — a special servicer is supposed to run a higher rate, and the cost-to-service assumption beside it is the tell. The cash cushion column is a rough advance-shock proxy that avoids needing an advances tag.",
+      tbl(A,{rows:[...CO].sort((a,b)=>b.dq-a.dq)}),["2 tags","ok"])
+  + card("Balance sheet and returns",
+      "Five of the most reliably tagged concepts in the whole taxonomy. Where <b>Liabilities</b> is untagged, derive it from LiabilitiesAndStockholdersEquity less equity and mark the row derived — that fallback is already the pattern in <b>concepts.py</b>.",
+      tbl(B,{rows:[...CO].sort((a,b)=>b.assets-a.assets)}),["5 tags","ok"])
+  + card("MSR concentration and funding cover",
+      "Concentration beside the stress number from tab 01. High concentration on its own is a business-model tell; high concentration <em>plus</em> a large worst-case is the combination a rating agency opens with.",
+      tbl(C,{rows:[...CO].sort((a,b)=>b.conc-a.conc)}))
+  + `<div class="grid2">`
+  + cardP("Delinquency rate against the peer median","Colour is a status band, not a series identity — the number sits on every bar, so the read never depends on colour alone.",`<div id="c3a"></div>`)
+  + cardP("MSR as a percentage of equity","Both inputs are standard tags. It reads very differently for a REIT carrying MSR alongside a large securities book than for a pure originator-servicer.",`<div id="c3b"></div>`)
+  + `</div>`
+  + card("Build list — what is not yet in concepts.py",
+      "Everything else on these three tabs is already mapped. This is the whole delta between the extractor as it stands and every table in this deck. Validate each against the SEC frames endpoint first and record which of the seven CIKs actually reports it — a plausible tag no filer uses returns empty and reads exactly like a missing disclosure, which is the failure mode the <b>concepts.py</b> docstring already warns about.",
+      `<div class="tablewrap"><table>
+        <thead><tr><th class="lbl">Tag</th><th>Tab</th><th class="lbl">Note</th></tr></thead>
+        <tbody>${ADD.map(r=>`<tr>
+          <td class="lbl"><span class="tag primary">${r[0]}</span></td>
+          <td class="num">${r[1]}</td>
+          <td class="lbl" style="white-space:normal;max-width:44ch;word-break:break-word;color:var(--ink-2);font-size:12.5px">${r[2]}</td>
+        </tr>`).join('')}</tbody></table></div>`,["10 tags to add","ac"])
+  + `<div class="card"><header><div><h2>Two things that will bite</h2></div></header><div class="body"><div class="cols2">
+     <div class="notes"><p><strong>Entity continuity.</strong> Ocwen now files as <strong>Onity Group</strong> after its 2024 rebrand — a label change on the same CIK, so it needs an effective-dated alias. Rocket closed the <strong>Mr. Cooper</strong> acquisition on 1 October 2025 and COOP delisted — a combination that roughly doubles Rocket's book, so it needs a discontinuity marker on every chart. Without both, any series crossing those dates will lie.</p></div>
+     <div class="notes"><p><strong>Missing is a value.</strong> A blank cell must record which of three reasons it is blank: not disclosed, not tagged, or extraction failed. Blank-because-unknown and blank-because-zero are different facts, and conflating them is how a dashboard quietly loses the people who were meant to use it.</p></div>
+  </div></div></div>`
+  + tagstrip([
+     ["Scraped",["DelinquentAmountAtEndOfPeriodOnLoansManagedAndSecuritized","Assets","Liabilities","StockholdersEquity","CashAndCashEquivalentsAtCarryingValue","AssetsSoldUnderAgreementsToRepurchaseRepurchaseLiability","NetIncomeLoss","ServicingAssetAtFairValueAmount"]],
+     ["Derived",["delinquency_rate","cash_dq_cover","leverage","roe_annualised","msr_concentration","cash_repo_cover","worst_case_pct_equity"],"der"],
+    ]);
+}
+
+/* =========================== TAB 04 — BENCHMARK YOURSELF =========================== */
+const ME_DEFAULT = {upb:285, loans:1180, msr:3.95, feeBps:30.2, ancBps:2.6, cts:84, cpr:7.4, dq:2.8, eq:1.35};
+let ME = {...ME_DEFAULT};
+try{const st=localStorage.getItem('spt.me'); if(st) ME={...ME_DEFAULT,...JSON.parse(st)};}catch(e){}
+
+const FIELDS = [
+  {k:"upb",   l:"Servicing UPB",      u:"$B",     step:1},
+  {k:"loans", l:"Loans serviced",     u:"000s",   step:10},
+  {k:"msr",   l:"MSR fair value",     u:"$B",     step:0.05},
+  {k:"feeBps",l:"Base servicing fee", u:"bps",    step:0.1},
+  {k:"ancBps",l:"Late + ancillary",   u:"bps",    step:0.1},
+  {k:"cts",   l:"Cost to service",    u:"$/loan", step:1},
+  {k:"cpr",   l:"CPR assumption",     u:"%",      step:0.1},
+  {k:"dq",    l:"60+ delinquency",    u:"%",      step:0.1},
+  {k:"eq",    l:"Equity",             u:"$B",     step:0.05},
+];
+
+/* dir: +1 = higher is better, -1 = lower is better, 0 = neutral (no better/worse) */
+const BM = [
+  {k:"mark",  l:"MSR mark",            sub:"bps of UPB",         dir:0,  dec:1, unit:"bps",
+   me:m=>m.msr/m.upb*1e4, peer:c=>c.bps},
+  {k:"feeBps",l:"Base servicing fee",  sub:"bps of UPB",         dir:1,  dec:1, unit:"bps",
+   me:m=>m.feeBps,        peer:c=>c.feeBps},
+  {k:"ancBps",l:"Late + ancillary fees",sub:"bps of UPB",        dir:1,  dec:2, unit:"bps",
+   me:m=>m.ancBps,        peer:c=>c.lateBps+c.ancBps},
+  {k:"cts",   l:"Cost to service",     sub:"$ per loan, annual", dir:-1, dec:0, unit:"$",
+   me:m=>m.cts,           peer:c=>c.cts},
+  {k:"cpr",   l:"CPR assumption",      sub:"prepayment speed, %",dir:-1, dec:1, unit:"%",
+   me:m=>m.cpr,           peer:c=>c.cpr},
+  {k:"dq",    l:"60+ delinquency",     sub:"% of UPB",           dir:-1, dec:2, unit:"%",
+   me:m=>m.dq,            peer:c=>c.dq},
+  {k:"conc",  l:"MSR concentration",   sub:"% of equity",        dir:0,  dec:0, unit:"%",
+   me:m=>m.msr/m.eq*100,  peer:c=>c.conc},
+  {k:"avg",   l:"Average loan size",   sub:"derived from your loan count", dir:0, dec:0, unit:"$K",
+   me:m=>m.upb*1e9/(m.loans*1e3)/1e3, peer:c=>null},
+];
+
+const usd = v=>{const a=Math.abs(v);
+  const s = a>=1e9 ? "$"+(a/1e9).toFixed(2)+"B" : a>=1e6 ? "$"+(a/1e6).toFixed(1)+"M" : a>=1e3 ? "$"+(a/1e3).toFixed(0)+"K" : "$"+Math.round(a);
+  return (v<0?"−":"")+s;};
+
+const fmtU=(v,b)=> b.unit==='$' ? '$'+nf(v,b.dec) : nf(v,b.dec)+(b.unit==='%'?'%':' '+b.unit);
+
+function bmCompute(){
+  const m=ME, out=[];
+  for(const b of BM){
+    const mine=b.me(m);
+    const peers=CO.map(b.peer).filter(v=>v!=null);
+    if(!peers.length){out.push({b,mine,peers:[],na:true}); continue;}
+    const srt=[...peers].sort((x,y)=>x-y);
+    const median=srt[(srt.length-1)/2|0];
+    const gap=mine-median;
+    // rank among peers + you, on the "better" direction
+    const better = b.dir===0 ? null : peers.filter(v=> b.dir>0 ? mine>v : mine<v).length;
+    const rank = better==null ? null : peers.length+1-better;
+    const pct  = better==null ? null : better/peers.length*100;
+    out.push({b,mine,peers:srt,median,gap,rank,pct,n:peers.length+1});
+  }
+  return out;
+}
+
+function bmDollars(){
+  const m=ME, R=bmCompute(), g=k=>R.find(r=>r.b.k===k);
+  const upbUsd=m.upb*1e9, loans=m.loans*1e3;
+  const fee = -g('feeBps').gap/1e4*upbUsd * -1;      // + = you earn more than median
+  const anc = -g('ancBps').gap/1e4*upbUsd * -1;
+  const cost= (g('cts').median-m.cts)*loans;          // + = you are cheaper
+  const pnl = fee+anc+cost;
+  const mark= -g('mark').gap/1e4*upbUsd * -1;        // + = you carry more
+  const dqEx= g('dq').gap/100*upbUsd;                 // + = excess delinquent UPB
+  // modelled: peer disclosures imply ~4% of MSR value per 10% relative move in CPR
+  const relCpr = (m.cpr-g('cpr').median)/g('cpr').median;
+  const cprVal = -(relCpr/0.10)*0.04*(m.msr*1e9);
+  return {fee,anc,cost,pnl,mark,dqEx,cprVal,R};
+}
+
+function bmStrip(){
+  const R=bmCompute();
+  return `<div class="strip">`+R.map(r=>{
+    if(r.na) return `<div class="row"><div class="nmx"><b>${r.b.l}</b>${r.b.sub}</div>`+
+      `<div style="font-size:12px;color:var(--ink-3);font-family:'IBM Plex Mono'">not disclosed by the peer set — no benchmark available</div>`+
+      `<div class="verdict"><span class="pill nu mono">${nf(r.mine,r.b.dec)} ${r.b.unit}</span></div></div>`;
+    const all=[...r.peers,r.mine];
+    let lo=Math.min(...all), hi=Math.max(...all); const pad=(hi-lo)*0.14||1; lo-=pad; hi+=pad;
+    const W=440,H=42, X=v=>10+(v-lo)/(hi-lo)*(W-20);
+    let g=`<line class="zl" x1="10" y1="${H/2}" x2="${W-10}" y2="${H/2}"/>`;
+    g+=`<line class="refl" x1="${X(r.median)}" y1="8" x2="${X(r.median)}" y2="${H-8}"/>`;
+    g+=`<text class="ax" x="${X(r.median)}" y="${H-1}" text-anchor="middle">median ${nf(r.median,r.b.dec)}</text>`;
+    CO.forEach(c=>{const v=r.b.peer(c); if(v==null)return;
+      g+=`<g class="hoverable"><circle cx="${X(v)}" cy="${H/2}" r="5.5" fill="${CS('--ink-3')}" opacity=".55" stroke="${CS('--surface')}" stroke-width="1.5"><title>${c.nm}: ${nf(v,r.b.dec)} ${r.b.unit}</title></circle></g>`;});
+    const good = r.b.dir===0 ? null : (r.b.dir>0 ? r.mine>=r.median : r.mine<=r.median);
+    const col = good===null ? CS('--accent') : good ? CS('--good') : CS('--crit');
+    g+=`<g class="hoverable"><circle cx="${X(r.mine)}" cy="${H/2}" r="7.5" fill="${col}" stroke="${CS('--surface')}" stroke-width="2"><title>You: ${nf(r.mine,r.b.dec)} ${r.b.unit}</title></circle>`+
+       `<text class="dl" x="${X(r.mine)}" y="12" text-anchor="middle" fill="${col}">YOU ${nf(r.mine,r.b.dec)}</text></g>`;
+    const verdict = r.b.dir===0
+      ? `<span class="pill nu">${nf(r.gap,r.b.dec)} vs median</span>`
+      : `<span class="pill ${good?'ok':'cr'}">${r.rank} of ${r.n}${good?' · ahead':' · behind'}</span>`;
+    return `<div class="row"><div class="nmx"><b>${r.b.l}</b>${r.b.sub}</div>`+
+      `<div><svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;max-width:${W}px;height:auto;overflow:visible" role="img" aria-label="${r.b.l}: you at ${nf(r.mine,r.b.dec)}, peer median ${nf(r.median,r.b.dec)}">${g}</svg></div>`+
+      `<div class="verdict">${verdict}</div></div>`;
+  }).join('')+`</div>`;
+}
+
+function bmTable(){
+  const R=bmCompute();
+  const rows=R.filter(r=>!r.na).map(r=>{
+    const good = r.b.dir===0 ? null : (r.b.dir>0 ? r.mine>=r.median : r.mine<=r.median);
+    return `<tr>
+      <td class="lbl" style="font-weight:500">${r.b.l}<div style="font-size:11.5px;color:var(--ink-3);font-weight:400">${r.b.sub}</div></td>
+      <td class="num" style="font-weight:600">${nf(r.mine,r.b.dec)}</td>
+      <td class="num sep">${nf(r.median,r.b.dec)}</td>
+      <td class="num">${nf(r.peers[0],r.b.dec)} – ${nf(r.peers[r.peers.length-1],r.b.dec)}</td>
+      <td class="num sep">${(r.gap>=0?'+':'')+nf(r.gap,r.b.dec)}</td>
+      <td class="num">${r.pct==null?'—':Math.round(r.pct)+'th'}</td>
+      <td class="num sep">${r.b.dir===0?'<span class="pill nu">neutral</span>':`<span class="pill ${good?'ok':'cr'}">${good?'ahead of median':'behind median'}</span>`}</td>
+    </tr>`;}).join('');
+  return `<div class="tablewrap"><table>
+    <thead><tr><th class="lbl">Metric</th><th>You</th><th class="sep">Peer median</th><th>Peer range</th><th class="sep">Gap</th><th>Percentile</th><th class="sep">Position</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function bmMoney(){
+  const d=bmDollars(), m=ME;
+  const line=(l,v,note,kind)=>`<tr>
+     <td class="lbl" style="font-weight:500">${l}<div style="font-size:11.5px;color:var(--ink-3);font-weight:400">${note}</div></td>
+     <td class="num" style="font-weight:600;color:${v>=0?'var(--good)':'var(--crit)'}">${usd(v)}</td>
+     <td class="num sep"><span class="pill ${kind==='pnl'?'ac':'nu'}">${kind==='pnl'?'annual P&L':kind==='bs'?'balance sheet':'exposure'}</span></td>
+   </tr>`;
+  return `<div class="tablewrap"><table>
+    <thead><tr><th class="lbl">Where the gap shows up</th><th>Value of the gap</th><th class="sep">Type</th></tr></thead>
+    <tbody>
+      ${line("Base servicing fee",d.fee,`gap in bps × $${m.upb}B UPB`,'pnl')}
+      ${line("Late &amp; ancillary fees",d.anc,`gap in bps × $${m.upb}B UPB`,'pnl')}
+      ${line("Cost to service",d.cost,`gap in $/loan × ${nf(m.loans,0)}k loans`,'pnl')}
+      <tr class="total"><td class="lbl">Annual P&amp;L gap to the peer median</td>
+        <td class="num" style="color:${d.pnl>=0?'var(--good)':'var(--crit)'}">${usd(d.pnl)}</td><td class="num sep"></td></tr>
+      ${line("MSR carrying value",d.mark,`mark gap in bps × $${m.upb}B UPB — one-time, not annual`,'bs')}
+      ${line("MSR value effect of the CPR gap",d.cprVal,`modelled from peer adverse-change disclosures (~4% of MSR value per 10% relative CPR move)`,'bs')}
+      ${line("Excess delinquent UPB",-Math.abs(d.dqEx)*Math.sign(d.dqEx||1),`delinquency gap × $${m.upb}B UPB — drives advance funding, not P&L directly`,'exp')}
+    </tbody></table></div>`;
+}
+
+function bmHero(){
+  const d=bmDollars(), R=d.R;
+  const scored=R.filter(r=>!r.na&&r.b.dir!==0);
+  const ahead=scored.filter(r=>r.b.dir>0?r.mine>=r.median:r.mine<=r.median).length;
+  const isAhead=r=>r.b.dir>0?r.mine>=r.median:r.mine<=r.median;
+  const spread=r=>Math.abs(r.gap)/((r.peers[r.peers.length-1]-r.peers[0])||1);
+  const behindList=scored.filter(r=>!isAhead(r)).sort((a,b)=>spread(b)-spread(a));
+  const aheadList =scored.filter(isAhead).sort((a,b)=>spread(b)-spread(a));
+  const worst = behindList[0] || aheadList[0];
+  const worstIsGap = behindList.length>0;
+  const best = aheadList[0];
+  return `<div class="card"><div class="body flush"><div class="hero">
+    <div><div class="k">Annual P&amp;L gap to peer median</div>
+      <div class="v ${d.pnl>=0?'pos':'neg'}">${usd(d.pnl)}</div>
+      <div class="d">${d.pnl>=0?'You run ahead of the peer median on revenue and cost combined.':'What closing the revenue and cost gaps to the median would be worth each year.'}</div></div>
+    <div><div class="k">Metrics ahead of median</div>
+      <div class="v">${ahead}<span style="font-size:15px;color:var(--ink-3);font-weight:600"> of ${scored.length}</span></div>
+      <div class="d">${best?`Strongest: ${best.b.l.toLowerCase()}.`:'No metric currently ahead of the peer median.'}</div></div>
+    <div><div class="k">${worstIsGap?'Widest gap behind median':'Widest margin ahead'}</div>
+      <div class="v" style="font-size:23px">${worst?worst.b.l:'—'}</div>
+      <div class="d">${worst?`You are at ${fmtU(worst.mine,worst.b)} against a peer median of ${fmtU(worst.median,worst.b)}.`:''}</div></div>
+    <div><div class="k">MSR carrying value vs median mark</div>
+      <div class="v ${d.mark>=0?'pos':'neg'}" style="font-size:26px">${usd(d.mark)}</div>
+      <div class="d">Balance-sheet difference if your book were marked at the peer median, not a P&amp;L item.</div></div>
+  </div></div></div>`;
+}
+
+function bmInputs(){
+  return `<div class="card"><header><div><h2>Your numbers</h2>
+    <p class="hint">Nine inputs, all of which a servicing VP has to hand. Everything below recalculates as you type.</p></div>
+    <div class="spacer"></div><span class="pill ok">Nothing leaves your browser</span></header>
+    <div class="body">
+      <div class="inputs">${FIELDS.map(f=>`<div class="field">
+        <label for="in-${f.k}">${f.l}</label>
+        <div class="ip"><input id="in-${f.k}" type="number" step="${f.step}" value="${ME[f.k]}" data-k="${f.k}" inputmode="decimal"><span class="u">${f.u}</span></div>
+      </div>`).join('')}</div>
+      <div class="privacy">
+        <b>Privacy</b>
+        <span>These values are never transmitted. They are held in this browser only, so the page remembers them next time you open it on this device.</span>
+        <span class="spacer"></span>
+        <button class="btn" id="bm-reset">Reset to example</button>
+        <button class="btn" id="bm-clear">Clear stored values</button>
+      </div>
+    </div></div>`;
+}
+
+function bmPeerTable(){
+  const mine={tk:"YOU",nm:"Your servicing book",note:"entered above",you:true,
+    upb:ME.upb, msr:ME.msr, bps:ME.msr/ME.upb*1e4, feeBps:ME.feeBps,
+    ancTot:ME.ancBps, cts:ME.cts, cpr:ME.cpr, dq:ME.dq, conc:ME.msr/ME.eq*100};
+  const rows=[...CO.map(c=>({tk:c.tk,nm:c.nm,note:c.note,upb:c.upb,msr:c.msr,bps:c.bps,
+     feeBps:c.feeBps,ancTot:c.lateBps+c.ancBps,cts:c.cts,cpr:c.cpr,dq:c.dq,conc:c.conc})),mine]
+     .sort((a,b)=>b.upb-a.upb);
+  return `<div class="tablewrap"><table>
+   <thead><tr><th class="lbl">Servicer</th><th>UPB $B</th><th>MSR $B</th><th class="sep">Mark bps</th><th>Fee bps</th><th>Late + anc bps</th><th class="sep">Cost to service $/loan</th><th>CPR %</th><th>60+ DQ %</th><th class="sep">MSR ÷ equity %</th></tr></thead>
+   <tbody>${rows.map(r=>`<tr class="${r.you?'you':''}">
+     <td class="lbl"><span class="co"><span class="tk">${r.tk}</span><span class="nm">${r.nm}${r.note?` <em>${r.note}</em>`:''}</span></span></td>
+     <td class="num">${nf(r.upb,0)}</td><td class="num">${nf(r.msr,2)}</td>
+     <td class="num sep">${nf(r.bps,1)}</td><td class="num">${nf(r.feeBps,1)}</td><td class="num">${nf(r.ancTot,2)}</td>
+     <td class="num sep">${nf(r.cts,0)}</td><td class="num">${nf(r.cpr,1)}</td><td class="num">${nf(r.dq,2)}</td>
+     <td class="num sep">${nf(r.conc,0)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* =========================== COMMENTARY ENGINE ===========================
+   Rule-based, runs entirely in the page. No input is transmitted.
+   ======================================================================= */
+const A=Math.abs;
+const fig=(t,cls)=>`<span class="fig${cls?' '+cls:''}">${t}</span>`;
+const pct1=v=>nf(v,1), pct2=v=>nf(v,2);
+
+function analyse(){
+  const m=ME, R=bmCompute(), D=bmDollars();
+  const g=k=>R.find(r=>r.b.k===k);
+  const q={};
+  ['mark','feeBps','ancBps','cts','cpr','dq','conc'].forEach(k=>{
+    const r=g(k); q[k]={me:r.mine,med:r.median,gap:r.gap,lo:r.peers[0],hi:r.peers[r.peers.length-1],rank:r.rank,n:r.n};
+  });
+  // multiples
+  q.mult  = {me:q.mark.me/q.feeBps.me, med:med('mult')};
+  q.multGap = q.mult.me-q.mult.med;
+  // revenue mix
+  q.revTot = q.feeBps.me+q.ancBps.me;
+  q.ancShare = q.ancBps.me/q.revTot*100;
+  q.ancSharePeer = med('lateBps')+med('ancBps');
+  q.ancSharePeer = (q.ancSharePeer)/(med('feeBps')+q.ancSharePeer)*100;
+  // scale
+  const bigger = CO.filter(c=>c.upb>m.upb).length;
+  q.sizeRank = bigger+1; q.sizeN = CO.length+1;
+  // stress, from peer adverse-change disclosures
+  q.stress20 = m.msr*1e9*0.078*(q.cpr.me/med('cpr'));
+  q.stressEq = q.stress20/(m.eq*1e9)*100;
+  q.stressEqMed = med('worstEq');
+  // coherence booleans (threshold: 8% of the peer range, so noise doesn't trigger prose)
+  const noisy=(k)=>A(q[k].gap) < (q[k].hi-q[k].lo)*0.08;
+  q.noisy=noisy;
+  return {m,R,D,q};
+}
+
+/* ---------- nearest peer archetype ---------- */
+function archetype(){
+  const m=ME, R=bmCompute(), g=k=>R.find(r=>r.b.k===k);
+  const dims=[
+    {k:'bps',  me:g('mark').mine,   f:c=>c.bps},
+    {k:'fee',  me:m.feeBps,          f:c=>c.feeBps},
+    {k:'anc',  me:m.ancBps,          f:c=>c.lateBps+c.ancBps},
+    {k:'cts',  me:m.cts,             f:c=>c.cts},
+    {k:'cpr',  me:m.cpr,             f:c=>c.cpr},
+    {k:'dq',   me:m.dq,              f:c=>c.dq},
+  ];
+  const rng=dims.map(d=>{const v=CO.map(d.f); return Math.max(...v)-Math.min(...v)||1;});
+  let best=null;
+  CO.forEach(c=>{
+    let s=0; dims.forEach((d,i)=>{s+=Math.pow((d.me-d.f(c))/rng[i],2);});
+    const dist=Math.sqrt(s/dims.length);
+    if(!best||dist<best.dist) best={c,dist};
+  });
+  return best;
+}
+
+/* ---------- findings ---------- */
+function findings(){
+  const {m,D,q}=analyse(); const F=[];
+  const upbUsd=m.upb*1e9, loans=m.loans*1e3;
+
+  /* 1 — cost to service, read against delinquency */
+  if(!q.noisy('cts')){
+    const over=q.cts.gap>0, dollars=A(q.cts.gap)*loans;
+    const dqAlso = q.dq.gap>0 && !q.noisy('dq');
+    const ancPays = q.ancBps.gap>0 && !q.noisy('ancBps');
+    let body, check, sev;
+    if(over && dqAlso && ancPays){
+      sev='matl';
+      body=`You run <b>${fig('$'+nf(q.cts.me,0)+'/loan')}</b> against a peer median of ${fig('$'+nf(q.cts.med,0))}, and your delinquency sits ${fig(pct2(A(q.dq.gap))+' pts')} above the peer median too. Those are the same fact, not two problems — a book with more non-performing loans costs more to service, and it should. The question is only whether you are paid for it, and you partly are: your ancillary line runs ${fig(pct2(A(q.ancBps.gap))+' bps')} above peers, worth ${fig(usd(A(D.anc)))} a year. That recovers ${fig(nf(A(D.anc)/dollars*100,0)+'%')} of the extra cost.`;
+      check=`Whether the remaining ${usd(dollars-A(D.anc))} is deliberate. High-touch servicers price for it in the boarding fee or the subservicing contract — if you are not capturing it there, the gap is structural rather than operational.`;
+    } else if(over && dqAlso && !ancPays){
+      sev='crit';
+      body=`This is the most consequential line on the page. You service at <b>${fig('$'+nf(q.cts.me,0)+'/loan')}</b> against a peer median of ${fig('$'+nf(q.cts.med,0))} — ${fig(usd(dollars))} a year — while carrying delinquency ${fig(pct2(A(q.dq.gap))+' pts')} above the peer median. The cost is explicable; the revenue is not. Your ancillary and late-fee capture is <em>below</em> the peer median by ${fig(pct2(A(q.ancBps.gap))+' bps')}, so you are absorbing a special-servicer cost base on a performing-servicer revenue line.`;
+      check=`Your fee schedule before your operating model. Peers running comparable delinquency capture ${nf(q.ancBps.med,2)} bps of ancillary against your ${nf(q.ancBps.me,2)}. Closing that alone is worth ${usd(A(q.ancBps.gap)/1e4*upbUsd)} a year and needs no headcount change.`;
+    } else if(over && !dqAlso){
+      sev='crit';
+      body=`Your cost to service is <b>${fig('$'+nf(q.cts.me,0)+'/loan')}</b> against a peer median of ${fig('$'+nf(q.cts.med,0))}, worth ${fig(usd(dollars))} a year on ${nf(m.loans,0)}k loans. Unlike most cost gaps in this sector, this one has no credit explanation behind it: your delinquency rate of ${fig(pct2(q.dq.me)+'%')} is ${q.dq.gap<=0?'at or below':'barely above'} the peer median of ${fig(pct2(q.dq.med)+'%')}. You are running a cleaner book than peers at a higher unit cost, which makes this an operating-efficiency gap and the most addressable item here.`;
+      check=`Scale is not the excuse — at ${fig('$'+nf(m.upb,0)+'B')} you would be the ${ordinal(q.sizeRank)} largest book on this page of ${q.sizeN}. Look at servicing platform, offshore mix, and default-servicing headcount per thousand loans instead.`;
+    } else {
+      sev='good';
+      body=`You service at <b>${fig('$'+nf(q.cts.me,0)+'/loan')}</b> against a peer median of ${fig('$'+nf(q.cts.med,0))} — ${fig(usd(dollars))} a year of advantage${dqAlso?`, and you do it while carrying delinquency ${fig(pct2(A(q.dq.gap))+' pts')} above the peer median, which is the harder version of the same achievement`:''}.`;
+      check=`That this is efficiency and not under-resourcing. Advance recovery timelines, complaint volumes and investor-audit findings are where an artificially low cost to service usually shows up first, and none of them are in a 10-Q.`;
+    }
+    F.push({sev,title:over?'Cost to service is above the peer median':'Cost to service is ahead of the peer median',
+      body,check,money:D.cost,tag:'annual P&L'});
+  }
+
+  /* 2 — revenue capture */
+  if(!q.noisy('feeBps')||!q.noisy('ancBps')){
+    const feeOff=q.feeBps.gap<0, ancOff=q.ancBps.gap<0;
+    const tot=D.fee+D.anc;
+    let body,check,sev;
+    if(feeOff&&ancOff){
+      sev='matl';
+      body=`Both revenue lines sit below the peer median. Your base servicing fee of ${fig(pct1(q.feeBps.me)+' bps')} is ${fig(pct1(A(q.feeBps.gap))+' bps')} light against a peer median of ${fig(pct1(q.feeBps.med))}, and ancillary capture of ${fig(pct2(q.ancBps.me)+' bps')} is ${fig(pct2(A(q.ancBps.gap))+' bps')} light. Together that is ${fig(usd(A(tot)))} a year. The two have different causes and very different fix horizons: the base strip is set at acquisition and you cannot renegotiate it, while ancillary is operational and moves within a quarter or two.`;
+      check=`Whether the base-fee gap is mix or pricing. A book weighted to government loans or to subservicing contracts will show a lower contractual strip for structural reasons — in which case only the ancillary half of this number is actually recoverable.`;
+    } else if(ancOff){
+      sev='matl';
+      body=`Base servicing fee is competitive at ${fig(pct1(q.feeBps.me)+' bps')} against a peer median of ${fig(pct1(q.feeBps.med))}, so the revenue gap is entirely in ancillary. You capture ${fig(pct2(q.ancBps.me)+' bps')} against a peer median of ${fig(pct2(q.ancBps.med))}, worth ${fig(usd(A(D.anc)))} a year. Ancillary runs at ${fig(pct1(q.ancShare)+'%')} of your servicing revenue against roughly ${fig(pct1(q.ancSharePeer)+'%')} across the peer set.`;
+      check=`Late-fee assessment and waiver policy first — it is usually the largest single component and the easiest to measure. Then modification, payoff-statement and pay-by-phone fees against your investor guidelines.`;
+    } else if(feeOff){
+      sev='info';
+      body=`Ancillary capture is at or above peers, but your base servicing fee of ${fig(pct1(q.feeBps.me)+' bps')} sits ${fig(pct1(A(q.feeBps.gap))+' bps')} below the peer median of ${fig(pct1(q.feeBps.med))} — ${fig(usd(A(D.fee)))} a year. This is the least actionable gap on the page: the contractual strip is fixed at acquisition, so it is an acquisition-pricing signal rather than an operating one.`;
+      check=`Your product and investor mix against the peer set. If the gap is structural it should be treated as a permanent feature of your economics and priced into what you bid for bulk packages, not chased.`;
+    } else {
+      sev='good';
+      body=`Revenue capture is ahead of peers on both lines — base fee at ${fig(pct1(q.feeBps.me)+' bps')} and ancillary at ${fig(pct2(q.ancBps.me)+' bps')}, together ${fig(usd(A(tot)))} a year of advantage over the peer median.`;
+      check=`That the ancillary premium is sustainable. Elevated late-fee income tracks delinquency, so some of this may be credit-cycle rather than franchise, and it reverses when the book cleans up.`;
+    }
+    F.push({sev,title:feeOff||ancOff?'Revenue capture is behind the peer median':'Revenue capture is ahead of the peer median',
+      body,check,money:tot,tag:'annual P&L'});
+  }
+
+  /* 3 — mark and multiple coherence against CPR */
+  {
+    const markOff=q.mark.gap<0, cprFast=q.cpr.gap>0;
+    let body,check,sev,title;
+    if(cprFast&&markOff){
+      sev='info'; title='Your mark is internally consistent with your speed assumption';
+      body=`You assume ${fig(pct1(q.cpr.me)+'% CPR')} against a peer median of ${fig(pct1(q.cpr.med)+'%')} and mark at ${fig(pct1(q.mark.me)+' bps')} against ${fig(pct1(q.mark.med))}. Those two move together as they should — a faster assumed runoff produces a lower mark. At ${fig(nf(q.mult.me,2)+'×')} the implied multiple sits ${q.multGap<0?'below':'above'} the peer median of ${fig(nf(q.mult.med,2)+'×')}, which is what you would expect given the speed.`;
+      check=`Whether the speed is the collateral or the assumption. If your note rate is genuinely higher than peers, the CPR is real and the mark is right. If it is not, you are carrying the book below where the market would price it, by roughly ${usd(A(D.mark))}.`;
+    } else if(cprFast&&!markOff){
+      sev='matl'; title='Your speed assumption and your mark pull in opposite directions';
+      body=`You assume ${fig(pct1(q.cpr.me)+'% CPR')} — ${fig(pct1(A(q.cpr.gap))+' pts')} faster than the peer median — yet mark at ${fig(pct1(q.mark.me)+' bps')}, ${fig(pct1(A(q.mark.gap))+' bps')} above peers. Faster runoff should produce a lower mark, so something else in the stack is carrying the difference: a lower discount rate, a lower assumed cost to service, or a richer ancillary assumption than the one your actuals support. Your implied multiple of ${fig(nf(q.mult.me,2)+'×')} against a peer median of ${fig(nf(q.mult.med,2)+'×')} is the compressed version of the same question.`;
+      check=`Reconcile the three inputs against each other before the next valuation date. The cost-to-service assumption is the usual culprit — modelling ${fig('$'+nf(q.cts.med,0)+'/loan')} while actually spending ${fig('$'+nf(q.cts.me,0))} quietly inflates the mark.`;
+    } else if(!cprFast&&markOff){
+      sev='matl'; title='You assume slower runoff than peers but mark below them';
+      body=`Your CPR of ${fig(pct1(q.cpr.me)+'%')} is ${fig(pct1(A(q.cpr.gap))+' pts')} slower than the peer median, which should support a <em>higher</em> mark. Instead you carry the book at ${fig(pct1(q.mark.me)+' bps')} against a peer median of ${fig(pct1(q.mark.med))}, an implied ${fig(nf(q.mult.me,2)+'×')} against ${fig(nf(q.mult.med,2)+'×')}. On a ${fig('$'+nf(m.upb,0)+'B')} book that is ${fig(usd(A(D.mark)))} of carrying value.`;
+      check=`Whether this is deliberate conservatism or a stale valuation. Conservatism is defensible and worth stating explicitly to your auditor and your lenders; a stale mark is neither, and it understates what you could realise in a bulk sale.`;
+    } else {
+      sev='good'; title='Mark and speed assumption both sit close to the peer set';
+      body=`CPR at ${fig(pct1(q.cpr.me)+'%')} and a mark of ${fig(pct1(q.mark.me)+' bps')} put your implied multiple at ${fig(nf(q.mult.me,2)+'×')} against a peer median of ${fig(nf(q.mult.med,2)+'×')}. Nothing in the valuation stack looks like an outlier.`;
+      check=`That the agreement is real and not coincidental. Two assumptions can both sit at the median while offsetting each other — the roll-forward cross-check on tab 02 is what confirms your actual decay matches your disclosed speed.`;
+    }
+    F.push({sev,title,body,check,money:D.mark,tag:'balance sheet'});
+  }
+
+  /* 4 — concentration and stress */
+  {
+    const conc=q.conc.me, high=conc>q.conc.med;
+    const sev = q.stressEq>25?'crit':q.stressEq>12?'matl':'good';
+    F.push({sev,title:high?'MSR concentration is above the peer median':'MSR concentration leaves room to add',
+      body:`Your MSR carries at ${fig(nf(conc,0)+'% of equity')} against a peer median of ${fig(nf(q.conc.med,0)+'%')}. Applying the adverse-change elasticity the peer set discloses, a 20% adverse move in prepayment speed is worth roughly ${fig(usd(q.stress20))} — ${fig(pct1(q.stressEq)+'% of your equity')}, against a peer median stress of ${fig(pct1(q.stressEqMed)+'%')}. ${q.stressEq>q.stressEqMed?'You carry more rate risk per dollar of equity than the median filer in this set.':'That is inside the range the peer set carries.'}`,
+      check:`Whether your MSR financing lines are sized against the stressed value or the carried value. Concentration only becomes a liquidity problem when a mark-to-market triggers a margin call, and that is a facility-terms question, not a balance-sheet one.`,
+      money:null,tag:'risk'});
+  }
+
+  /* 5 — delinquency, when it is the standalone story */
+  if(!q.noisy('dq') && q.dq.gap>0 && q.noisy('cts')){
+    F.push({sev:'matl',title:'Delinquency runs above the peer median without a matching cost signal',
+      body:`Your 60+ rate of ${fig(pct2(q.dq.me)+'%')} sits ${fig(pct2(A(q.dq.gap))+' pts')} above the peer median of ${fig(pct2(q.dq.med)+'%')} — around ${fig(usd(A(D.dqEx)))} of additional delinquent UPB — yet your cost to service is in line with peers. Either your default-servicing operation is unusually efficient, or the cost of carrying that delinquency has not yet arrived in the unit economics.`,
+      check:`Advances outstanding against delinquent UPB. That ratio is the leading indicator here, and it moves before cost to service does.`,
+      money:null,tag:'exposure'});
+  }
+
+  const order={crit:0,matl:1,info:2,good:3};
+  return F.sort((a,b)=> order[a.sev]-order[b.sev] || A(b.money||0)-A(a.money||0));
+}
+function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+
+/* ---------- executive read ---------- */
+function execRead(){
+  const {m,D,q}=analyse(); const ar=archetype();
+  const behind=[], ahead=[];
+  [['cost to service','cts',-1],['base servicing fee','feeBps',1],['ancillary capture','ancBps',1],
+   ['delinquency','dq',-1],['prepayment speed','cpr',-1]].forEach(([l,k,dir])=>{
+     if(q.noisy(k))return;
+     const good = dir>0 ? q[k].gap>0 : q[k].gap<0;
+     (good?ahead:behind).push(l);
+   });
+  const list=a=>a.length===0?'nothing':a.length===1?a[0]:a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+  const worst = A(D.cost)>=A(D.fee)&&A(D.cost)>=A(D.anc) ? ['cost to service',D.cost]
+              : A(D.anc)>=A(D.fee) ? ['ancillary capture',D.anc] : ['the base servicing strip',D.fee];
+  const p1 = D.pnl<0
+   ? `On the numbers you entered, <b>${fig(usd(A(D.pnl)),'dn')} a year</b> separates your book from the median of the seven listed servicers — and ${A(worst[1])/A(D.pnl)>0.45?'most of it sits in a single line':'it is spread across more than one line'}. ${worst[1]<0?`The largest single component is ${worst[0]}, at ${fig(usd(A(worst[1])),'dn')}.`:''}`
+   : `On the numbers you entered, your book runs <b>${fig(usd(A(D.pnl)),'up')} a year ahead</b> of the median of the seven listed servicers on revenue and cost combined.`;
+  const p2 = `${behind.length
+     ? `You sit behind the peer median on ${list(behind)}${ahead.length?`, and ahead of it on ${list(ahead)}`:''}.`
+     : ahead.length
+       ? `You sit ahead of the peer median on every metric this page scores \u2014 ${list(ahead)}.`
+       : `Every metric you entered sits close enough to the peer median that the difference is inside the noise band.`} At ${fig('$'+nf(m.upb,0)+'B')} of UPB you would be the ${fig(ordinal(q.sizeRank))} largest book in this group of ${q.sizeN}, which matters for one reason: it removes scale as an explanation for any unit-cost gap. The filers above and below you in size are absorbing broadly the same fixed base.`;
+  const p3 = `Your economics most closely resemble <b>${fig(ar.c.nm)}</b>${ar.c.note?` (${ar.c.note})`:''} across mark, fee capture, cost and credit. That is the peer whose disclosures are worth reading in full — the roll-forward and Level 3 tables on tabs 01 and 02 will tell you more about your own trajectory than the median of a group you only half resemble.`;
+  const p4 = `Everything below is computed in this page from the figures you typed and from facts extracted out of public 10-Q and 10-K filings. The commentary follows fixed rules, not judgement, so treat it as a structured second read rather than a conclusion.`;
+  return `<div class="read"><p class="lead">${p1}</p><div class="cols"><p>${p2}</p><p>${p3}</p><p>${p4}</p></div></div>`;
+}
+
+function findingsHtml(){
+  const sevLabel={crit:['crit','needs attention'],matl:['wn','material'],info:['nu','context'],good:['ok','strength']};
+  return `<div class="findings">`+findings().map(f=>{
+    const [cls,lbl]=sevLabel[f.sev];
+    return `<div class="finding ${f.sev}"><div class="stripe"></div><div class="c">
+      <div class="meta"><h4>${f.title}</h4>
+        <span class="pill ${cls}">${lbl}</span>
+        ${f.money!=null?`<span class="money ${f.money>=0?'up':'dn'}">${usd(f.money)} <span style="color:var(--ink-3);font-weight:400">${f.tag}</span></span>`:`<span class="pill nu">${f.tag}</span>`}
+      </div>
+      <p>${f.body}</p>
+      <div class="check"><b>Check first</b>${f.check}</div>
+    </div></div>`;}).join('')+`</div>`;
+}
+
+function archHtml(){
+  const ar=archetype(), c=ar.c, R=bmCompute(), g=k=>R.find(r=>r.b.k===k);
+  const close=(l,a,b,d,u)=>`${l}: you ${nf(a,d)}${u}, ${c.tk} ${nf(b,d)}${u}`;
+  const sim=Math.max(0,(1-ar.dist))*100;
+  return `<div class="arch">
+    <div class="who"><div class="tkbig">${c.tk}</div><div class="nm">${c.nm}${c.note?`<br>${c.note}`:''}</div>
+      <div class="eyebrow" style="margin-top:10px">${nf(sim,0)}% similar</div></div>
+    <div class="body2">
+      <p>Across the six dimensions this page compares — mark, base fee, ancillary capture, cost to service, prepayment speed and delinquency — your book sits closest to <b>${c.nm}</b>. ${close('Cost to service',ME.cts,c.cts,0,'')} per loan; ${close('CPR',ME.cpr,c.cpr,1,'%')}; ${close('60+ delinquency',ME.dq,c.dq,2,'%')}.</p>
+      <p>Two things follow from that. First, ${c.tk}'s filings are the most useful single document you can read — its Level 3 assumption table and MSR roll-forward describe a book that behaves like yours, so its disclosures explain your own trajectory better than a seven-filer median does. Second, where you diverge from ${c.tk} specifically, the divergence is more likely to be real than where you diverge from the median, because the business models are already close.</p>
+      <p class="eyebrow">Similarity is Euclidean distance across the six normalised metrics — a structural resemblance, not a statement about strategy or quality.</p>
+    </div></div>`;
+}
+
+function T4(){
+  return head("04","Benchmark yourself",
+    "The seven filers stop being the subject and become the yardstick. Enter your own book and the peer set — built entirely from public filings — tells you where you sit, and what each gap is worth in dollars.",
+    [["Public peer set","ok"],["Your data stays local","ac"]])
+  + bmInputs()
+  + `<div id="bm-out"></div>`;
+}
+function bmRender(){
+  const el=document.getElementById('bm-out'); if(!el)return;
+  el.className='stack';
+  el.innerHTML = bmHero()
+   + `<div class="card"><header><div><h2>The read</h2><p class="hint">A structured second opinion on the numbers above, generated in this page from fixed rules. It updates as you change any input.</p></div><div class="spacer"></div><span class="pill ac">Computed locally</span></header><div class="body flush">${execRead()}</div></div>`
+   + `<div class="card"><header><div><h2>Findings, ranked</h2><p class="hint">Ordered by how much they should worry you, then by size. Each one names the mechanism rather than the magnitude, and ends with the thing worth checking before anybody acts on it.</p></div></header><div class="body flush">${findingsHtml()}</div></div>`
+   + `<div class="card"><header><div><h2>Closest peer model</h2><p class="hint">Which of the seven filers your book most resembles structurally — and therefore whose disclosures are worth reading properly.</p></div></header><div class="body flush">${archHtml()}</div></div>`
+   + cardP("Your position in the peer distribution",
+       "Each row is one metric. Grey dots are the seven public filers, the dashed line is the peer median, and the coloured dot is you. Where a lower number is better \u2014 cost to service, CPR, delinquency \u2014 the colour reflects that, not the direction of the gap.",
+       bmStrip())
+   + card("Where each gap shows up, in dollars",
+       "The arithmetic behind the commentary. The first three lines are recurring P&amp;L. The last three are balance-sheet or exposure effects and should not be added to them.",
+       bmMoney(),["Your book vs peer median","ac"])
+   + card("Your book alongside the peer set",
+       "The row highlighted in blue is yours. Everything else is scraped from 10-Q and 10-K filings and carries the same provenance as the rest of the dashboard.",
+       bmPeerTable())
+   + `<div class="card"><header><div><h2>How to read this honestly</h2></div></header><div class="body"><div class="cols2">
+      <div class="notes"><p><strong>The median is not a target.</strong> A special servicer should run a higher delinquency rate and a higher cost to service \u2014 that is the book it chose. Read every gap beside the business model, not against it. The value of the comparison is in the gaps you <em>cannot</em> explain that way.</p>
+      <p><strong>Definitions will not match perfectly.</strong> Filers differ on what sits inside cost to service and what counts as ancillary. Treat a gap under roughly 5% as noise until you have checked the two definitions against each other \u2014 the commentary above already suppresses anything inside 8% of the peer range for the same reason.</p></div>
+      <div class="notes"><p><strong>The commentary follows rules, not judgement.</strong> It reads the relationships between your inputs \u2014 delinquency against cost, speed against mark \u2014 and says what those combinations usually mean. It cannot see your investor mix, your servicing agreements or your platform, and any of those can overturn a finding.</p>
+      <p><strong>Nothing here is transmitted.</strong> The comparison and the commentary both run entirely in this page against figures already extracted from public filings. No input is sent anywhere, and clearing the stored values removes them from this device.</p></div>
+   </div></div></div>`;
+}
+
+/* =========================== RENDER =========================== */
+const TABS={p1:T1,p2:T2,p3:T3,p4:T4};
+Object.entries(TABS).forEach(([k,fn])=>{document.getElementById('pg-'+k).innerHTML=fn();});
+
+function drawAll(){
+  const $=id=>document.getElementById(id);
+  scatter($('c1a'));
+  divBar($('c1b'),[...CO].sort((a,b)=>b.bps-a.bps),'bps','bps',v=>v.toFixed(1),null,'median');
+  divBar($('c2a'),[...CO].sort((a,b)=>b.repl-a.repl),'repl','×',v=>v.toFixed(2),1,'1.00×',0);
+  stackBar($('c2b'),[...CO].sort((a,b)=>b.revBps-a.revBps),['feeBps','lateBps','ancBps'],[CS('--s1'),CS('--s2'),CS('--s3')],'bps',1);
+  barRef($('c3a'),[...CO].sort((a,b)=>b.dq-a.dq),'dq',v=>v.toFixed(2)+'%',r=>r.dq>3?CS('--crit'):r.dq>2?CS('--warn'):CS('--s1'),'peer median');
+  barRef($('c3b'),[...CO].sort((a,b)=>b.conc-a.conc),'conc',v=>v.toFixed(0)+'%',r=>r.conc>250?CS('--crit'):r.conc>140?CS('--warn'):CS('--s1'),'peer median');
+  bmRender();
+}
+function bmSave(){try{localStorage.setItem('spt.me',JSON.stringify(ME));}catch(e){}}
+document.addEventListener('input',e=>{
+  const k=e.target.dataset&&e.target.dataset.k; if(!k)return;
+  const v=parseFloat(e.target.value);
+  ME[k] = (Number.isFinite(v)&&v>0) ? v : ME_DEFAULT[k];
+  bmSave(); bmRender();
+});
+document.addEventListener('click',e=>{
+  if(e.target.id==='bm-reset'||e.target.id==='bm-clear'){
+    if(e.target.id==='bm-clear'){try{localStorage.removeItem('spt.me');}catch(err){}}
+    ME={...ME_DEFAULT};
+    FIELDS.forEach(f=>{const el=document.getElementById('in-'+f.k); if(el)el.value=ME[f.k];});
+    bmRender();
+    if(e.target.id==='bm-reset') bmSave();
+  }
+});
+drawAll();
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+  t.setAttribute('aria-selected','true');
+  document.querySelectorAll('.page').forEach(p=>p.hidden=true);
+  document.getElementById('pg-'+t.dataset.p).hidden=false;
+  window.scrollTo({top:0,behavior:'instant'});
+}));
+const pb=document.getElementById('plumb');
+pb.addEventListener('click',()=>{
+  const on=pb.getAttribute('aria-pressed')==='true';
+  pb.setAttribute('aria-pressed',on?'false':'true');
+  document.body.dataset.plumb=on?'0':'1';
+  pb.textContent=on?'Show XBRL plumbing':'Show values';
+});
+document.getElementById('theme').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const sysDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme',cur?(cur==='dark'?'light':'dark'):(sysDark?'light':'dark'));
+  requestAnimationFrame(drawAll);
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>requestAnimationFrame(drawAll));
+</script>
