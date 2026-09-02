@@ -29,3 +29,11 @@ app.add_middleware(
 app.include_router(tab1_router)
 app.include_router(tab2_router)
 app.include_router(tab3_router)
+
+
+@app.get("/")
+def health():
+    # A root route so platform health checks (Render defaults to probing
+    # "/") get a 200 instead of a 404 -- without this, the host concludes
+    # the instance is unhealthy and kills/restarts it in a loop.
+    return {"status": "ok"}
