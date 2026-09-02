@@ -8,12 +8,15 @@ payload until it goes stale.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 import uuid
 from pathlib import Path
 
 from . import extractor
+
+logger = logging.getLogger(__name__)
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache" / "companyfacts"
 TTL_SECONDS = 24 * 60 * 60  # 24 hours
@@ -40,7 +43,17 @@ def get_company_facts(cik: str, *, force_refresh: bool = False) -> dict:
                 # every subsequent request crash on the same broken file.
                 pass
 
-    facts = extractor.fetch_sec_facts(cik)
+    logger.info("Fetching fresh SEC companyfacts for CIK %s", cik)
+    started = time.monotonic()
+    try:
+        facts = extractor.fetch_sec_facts(cik)
+    except Exception:
+        logger.exception(
+            "SEC fetch failed for CIK %s after %.1fs", cik, time.monotonic() - started
+        )
+        raise
+    logger.info("Fetched SEC companyfacts for CIK %s in %.1fs", cik, time.monotonic() - started)
+
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     # Write atomically: a reader can never observe a partially-written

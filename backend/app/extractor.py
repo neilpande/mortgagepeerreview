@@ -8,13 +8,20 @@ import urllib.request
 from bs4 import BeautifulSoup
 
 SEC_HEADERS = {'User-Agent': 'Cloverstone Edgar Dashboard/1.0 (neil@cloverstone.ai)'}
+SEC_REQUEST_TIMEOUT_SECONDS = 20
 
 
 def fetch_sec_facts(cik: str) -> dict:
-    """Fetch raw XBRL company facts JSON from the SEC API."""
+    """Fetch raw XBRL company facts JSON from the SEC API.
+
+    A network path that's slow or silently drops packets (rather than
+    actively refusing) leaves urlopen with no default timeout blocked
+    indefinitely, holding a thread forever with no error to log -- so an
+    explicit timeout here is required, not just good practice.
+    """
     url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik.zfill(10)}.json"
     req = urllib.request.Request(url, headers=SEC_HEADERS)
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=SEC_REQUEST_TIMEOUT_SECONDS) as resp:
         return json.loads(resp.read().decode())
 
 

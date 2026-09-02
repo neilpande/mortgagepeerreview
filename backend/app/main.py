@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 
 from fastapi import FastAPI
@@ -8,6 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routers.tab1 import router as tab1_router
 from .routers.tab2 import router as tab2_router
 from .routers.tab3 import router as tab3_router
+
+# INFO is otherwise suppressed by the root logger's default WARNING level,
+# which would silently hide cache.py's SEC-fetch timing/error logs -- the
+# exact visibility needed to diagnose a slow or hanging upstream request.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 app = FastAPI(title="Servicer Peer Analytics Dashboard API")
 
