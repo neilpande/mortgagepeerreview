@@ -49,9 +49,14 @@ def test_concurrent_cache_misses_for_same_cik_dont_race(monkeypatch, tmp_path):
     # shared, non-unique temp filename, so one's os.replace could steal
     # the other's temp file out from under it (FileNotFoundError).
     monkeypatch.setattr(cache, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(cache, "_cik_locks", {})
     cik = "0001234567"
 
+    fetch_count = []
+
     def fake_fetch(cik):
+        fetch_count.append(cik)
+        time.sleep(0.05)
         return {"facts": {"us-gaap": {"ok": True}}}
 
     monkeypatch.setattr(cache.extractor, "fetch_sec_facts", fake_fetch)
@@ -71,6 +76,11 @@ def test_concurrent_cache_misses_for_same_cik_dont_race(monkeypatch, tmp_path):
         t.join()
 
     assert errors == []
+    # The per-CIK lock should have serialized these onto a single fetch --
+    # not just avoided a crash, but avoided the redundant concurrent SEC
+    # calls entirely (the actual fix for the memory-pressure crash this
+    # was chasing).
+    assert fetch_count == [cik]
 
 
 def test_get_all_company_facts_fetches_in_parallel_not_sequentially(monkeypatch, tmp_path):

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -23,6 +24,20 @@ logger = logging.getLogger(__name__)
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache" / "companyfacts"
 TTL_SECONDS = 24 * 60 * 60  # 24 hours
 
+# Per-CIK locks so concurrent requests for the same company (e.g. two
+# people loading the dashboard, or two tabs, at the same moment the cache
+# is cold) serialize onto a single SEC fetch instead of each launching
+# their own -- important on a memory-constrained host, where several
+# redundant concurrent fetches at once is what was tipping the process
+# over. A dict-building lock guards lazily creating each CIK's lock.
+_cik_locks: dict[str, threading.Lock] = {}
+_cik_locks_guard = threading.Lock()
+
+
+def _lock_for(cik: str) -> threading.Lock:
+    with _cik_locks_guard:
+        return _cik_locks.setdefault(cik, threading.Lock())
+
 
 def _cache_path(cik: str) -> Path:
     return CACHE_DIR / f"{cik.zfill(10)}.json"
@@ -30,6 +45,11 @@ def _cache_path(cik: str) -> Path:
 
 def get_company_facts(cik: str, *, force_refresh: bool = False) -> dict:
     """Return companyfacts JSON for a CIK, serving from disk when fresh."""
+    with _lock_for(cik):
+        return _get_company_facts_locked(cik, force_refresh=force_refresh)
+
+
+def _get_company_facts_locked(cik: str, *, force_refresh: bool) -> dict:
     path = _cache_path(cik)
 
     if not force_refresh and path.exists():
