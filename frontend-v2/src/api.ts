@@ -1,15 +1,14 @@
 import type { PeriodsResponse, Tab1Response, Tab2Response, Tab3Response } from './types';
 
-// In local dev, requests to /api/* are proxied to the backend (see
-// vite.config.ts). In production (e.g. Vercel) there's no dev proxy, so
-// VITE_API_BASE_URL must point at the deployed backend's origin.
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+// Same-origin in both local dev (Vite proxies /api/* to the local
+// FastAPI dev server, see vite.config.ts) and production (Vercel serves
+// the API as functions from api/* alongside this static build) -- no
+// separate backend origin to configure.
 
 async function getJson<T>(path: string): Promise<T> {
-  const url = `${API_BASE}${path}`;
-  const res = await fetch(url);
+  const res = await fetch(path);
   if (!res.ok) {
-    throw new Error(`${url} -> ${res.status} ${res.statusText}`);
+    throw new Error(`${path} -> ${res.status} ${res.statusText}`);
   }
   return res.json() as Promise<T>;
 }

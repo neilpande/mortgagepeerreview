@@ -17,11 +17,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 
 app = FastAPI(title="Servicer Peer Analytics Dashboard API")
 
-# Read-only, GET-only, no auth/cookies, no sensitive data (public SEC
-# filings) -- so a wildcard origin is a reasonable default. Set
-# ALLOWED_ORIGINS (comma-separated) in production to restrict it to the
-# deployed frontend's actual origin instead.
-_default_origins = "http://localhost:5173,http://localhost:5174"
+# In production the frontend and this API are served from the same Vercel
+# deployment (frontend-v2/api/*), so CORS doesn't matter there. This is
+# only for local dev, where the Vite dev server (port 5174) and a
+# standalone `uvicorn app.main:app` (for quick backend iteration outside
+# `vercel dev`) run on different ports.
+_default_origins = "http://localhost:5174"
 allowed_origins = os.environ.get("ALLOWED_ORIGINS", _default_origins)
 origins = ["*"] if allowed_origins == "*" else [o.strip() for o in allowed_origins.split(",")]
 
@@ -39,7 +40,4 @@ app.include_router(tab3_router)
 
 @app.get("/")
 def health():
-    # A root route so platform health checks (Render defaults to probing
-    # "/") get a 200 instead of a 404 -- without this, the host concludes
-    # the instance is unhealthy and kills/restarts it in a loop.
     return {"status": "ok"}
