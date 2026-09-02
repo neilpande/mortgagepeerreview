@@ -28,6 +28,32 @@ from ..schemas import (
 from .common import sourced as _sourced
 
 
+def _has_price_bps(company: Company, period: Period) -> bool:
+    """Cheap check of just the 3 concepts Price/Mult need, instead of
+    resolving all 11 concepts a full company row needs.
+
+    best_period_for_coverage calls this up to (scan_limit x 7 companies)
+    times just to compare coverage across candidate periods -- resolving
+    every Level 3/sensitivity concept each time was pure waste there, and
+    measurably slow under Python-level JSON scanning on a CPU-constrained
+    host, since it's the same underlying data walked repeatedly either way.
+    """
+    facts = cache.get_company_facts(company.cik)
+    upb_fact = extract_metric(facts, BY_KEY["msr_upb"], period)
+    fv_fact = extract_metric(facts, BY_KEY["msr_fair_value"], period)
+    fee_fact = extract_metric(facts, BY_KEY["servicing_fee_income"], period)
+
+    upb = upb_fact["value"] if upb_fact else None
+    fair_value = fv_fact["value"] if fv_fact else None
+    fee_annualized = (
+        annualize_duration(fee_fact["value"], fee_fact["start"], fee_fact["end"])
+        if fee_fact
+        else None
+    )
+    servicing_fee_bps = derive_servicing_fee_bps(fee_annualized, upb)
+    return derive_price_mult(upb, fair_value, servicing_fee_bps) is not None
+
+
 def _resolve_company_row(company: Company, period: Period) -> tuple[CompanyRow, dict]:
     facts = cache.get_company_facts(company.cik)
 
@@ -147,7 +173,7 @@ def _build_charts(rows_raw: list[dict], companies: list[Company]) -> ChartData:
     return ChartData(comparison_scatter=scatter, peer_deviation=deviation)
 
 
-def best_period_for_coverage(candidates: list[Period], *, scan_limit: int = 12) -> Period:
+def best_period_for_coverage(candidates: list[Period], *, scan_limit: int = 6) -> Period:
     """Pick the period with the most fully-populated primary-table rows.
 
     The most recent selectable period is frequently the sparsest -- interim
@@ -164,11 +190,7 @@ def best_period_for_coverage(candidates: list[Period], *, scan_limit: int = 12) 
     best_period = candidates[0]
     best_score = -1
     for period in candidates[:scan_limit]:
-        score = 0
-        for company in COMPANIES:
-            _, raw = _resolve_company_row(company, period)
-            if raw["price_bps"] is not None:
-                score += 1
+        score = sum(1 for company in COMPANIES if _has_price_bps(company, period))
         if score > best_score:
             best_score = score
             best_period = period
