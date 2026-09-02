@@ -1,5 +1,6 @@
 import json
 import threading
+import time
 
 from app import cache
 
@@ -70,3 +71,24 @@ def test_concurrent_cache_misses_for_same_cik_dont_race(monkeypatch, tmp_path):
         t.join()
 
     assert errors == []
+
+
+def test_get_all_company_facts_fetches_in_parallel_not_sequentially(monkeypatch, tmp_path):
+    monkeypatch.setattr(cache, "CACHE_DIR", tmp_path)
+    ciks = [f"000000000{i}" for i in range(5)]
+
+    def slow_fetch(cik):
+        time.sleep(0.2)
+        return {"facts": {"cik": cik}}
+
+    monkeypatch.setattr(cache.extractor, "fetch_sec_facts", slow_fetch)
+
+    started = time.monotonic()
+    results = cache.get_all_company_facts(ciks)
+    elapsed = time.monotonic() - started
+
+    assert len(results) == 5
+    assert {r["facts"]["cik"] for r in results} == set(ciks)
+    # Sequential would take ~1.0s (5 x 0.2s); parallel should be close to
+    # a single fetch's duration.
+    assert elapsed < 0.6

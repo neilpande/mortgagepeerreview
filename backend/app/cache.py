@@ -12,7 +12,9 @@ import logging
 import os
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Sequence
 
 from . import extractor
 
@@ -80,3 +82,17 @@ def get_company_facts(cik: str, *, force_refresh: bool = False) -> dict:
             time.sleep(0.05)
 
     return facts
+
+
+def get_all_company_facts(ciks: Sequence[str]) -> list[dict]:
+    """Return companyfacts for every given CIK, fetching any cache misses
+    in parallel rather than one at a time.
+
+    Every peer-group request loops all 7 companies; fetching cold-cache
+    misses sequentially took ~40s each (SEC's response time from this
+    host, not a hang), so a fully-cold request could take several
+    minutes end to end. Fetching in parallel bounds the total time by the
+    slowest single company instead of their sum.
+    """
+    with ThreadPoolExecutor(max_workers=max(len(ciks), 1)) as executor:
+        return list(executor.map(get_company_facts, ciks))

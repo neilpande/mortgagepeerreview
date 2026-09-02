@@ -9,7 +9,7 @@ from ..periods import Period, discover_available_periods
 
 
 def available_periods() -> list[Period]:
-    all_facts = [cache.get_company_facts(c.cik) for c in COMPANIES]
+    all_facts = cache.get_all_company_facts([c.cik for c in COMPANIES])
     return discover_available_periods(all_facts, BY_KEY)
 
 
