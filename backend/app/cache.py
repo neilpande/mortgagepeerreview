@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import uuid
 from pathlib import Path
 
 from . import extractor
@@ -45,10 +46,24 @@ def get_company_facts(cik: str, *, force_refresh: bool = False) -> dict:
     # Write atomically: a reader can never observe a partially-written
     # file, because os.replace is a single filesystem operation -- a
     # process killed mid-write leaves the *temp* file damaged, never the
-    # cache file readers actually use.
-    tmp_path = path.with_suffix(".json.tmp")
+    # cache file readers actually use. The temp filename includes a random
+    # token so concurrent requests for the same CIK (e.g. multiple tabs
+    # loading at once) never race on the same temp path.
+    tmp_path = path.with_suffix(f".{uuid.uuid4().hex}.tmp")
     with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(facts, f)
-    os.replace(tmp_path, path)
+
+    # On Windows, os.replace can transiently fail with PermissionError if
+    # another thread has `path` open for reading at that exact instant
+    # (POSIX allows replacing an open file; Windows doesn't) -- retry
+    # briefly rather than surfacing a spurious error under concurrency.
+    for attempt in range(5):
+        try:
+            os.replace(tmp_path, path)
+            break
+        except PermissionError:
+            if attempt == 4:
+                raise
+            time.sleep(0.05)
 
     return facts
